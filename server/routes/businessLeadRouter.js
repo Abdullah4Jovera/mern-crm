@@ -10,7 +10,7 @@ const RealEstateLoanLead = require('../models/realEstateLoanLeadModel.js');
 
 // Create a new lead (Business Loan Lead)
 router.post('/create-lead', async (req, res) => {
-  const { service, client, selectedUsers, stage, description, source, labels, clientDetails } = req.body;
+  const { service, client, selectedUsers = [], stage, description, source, labels, clientDetails } = req.body;
 
   try {
     let clientId = client;
@@ -28,7 +28,7 @@ router.post('/create-lead', async (req, res) => {
         clientId = existingUser._id;
       } else {
         // Hash the password before saving
-        const hashedPassword = await bcrypt.hash('12345', 10);
+        const hashedPassword = await bcrypt.hash('12345', 10); 
         const newUser = new User({
           ...clientDetails,
           verified: true,
@@ -44,28 +44,59 @@ router.post('/create-lead', async (req, res) => {
       return res.status(400).json({ error: 'Client ID or client details must be provided' });
     }
 
-    // Check if a lead already exists for the given client in any of the lead collections
-    const existingLeads = await Promise.all([
-      BusinessLoanLead.findOne({ client: clientId }),
-      PersonalLoanLead.findOne({ client: clientId })
-    ]);
+    // // Check if a lead already exists for the given client in any of the lead collections
+    // const existingLeads = await Promise.all([
+    //   BusinessLoanLead.findOne({ client: clientId }),
+    //   PersonalLoanLead.findOne({ client: clientId }),
+    //   MortgageLoanLead.findOne({ client: clientId }),
+    //   RealEstateLoanLead.findOne({ client: clientId }) // Check for existing real estate loan lead
+    // ]);
 
-    const existingBusinessLead = existingLeads[0];
-    const existingPersonalLead = existingLeads[1];
+    // const existingBusinessLead = existingLeads[0];
+    // const existingPersonalLead = existingLeads[1];
+    // const existingMortgageLead = existingLeads[2];
+    // const existingRealEstateLead = existingLeads[3]; // Capture existing real estate loan lead
 
-    if (existingBusinessLead) {
-      return res.status(400).json({ error: 'A business lead already exists for the client', lead: existingBusinessLead });
-    }
+    // if (existingBusinessLead) {
+    //   return res.status(400).json({ error: 'A business lead already exists for the client', lead: existingBusinessLead });
+    // }
 
-    if (existingPersonalLead) {
-      return res.status(400).json({ error: 'A personal lead already exists for the client', lead: existingPersonalLead });
-    }
+    // if (existingPersonalLead) {
+    //   return res.status(400).json({ error: 'A personal lead already exists for the client', lead: existingPersonalLead });
+    // }
+
+    // if (existingMortgageLead) {
+    //   return res.status(400).json({ error: 'A mortgage lead already exists for the client', lead: existingMortgageLead });
+    // }
+
+    // if (existingRealEstateLead) {
+    //   return res.status(400).json({ error: 'A real estate lead already exists for the client', lead: existingRealEstateLead });
+    // }
+
+    // Fetch users with specified roles
+    const rolesToInclude = [
+      'CEO', 
+      'MD',
+      'businessfinanceloanmanger',
+      'businessfinanceloanHOD',
+      'businessfinanceloancordinator'
+    ];
+    
+    const usersWithRoles = await User.find({
+      'role': { $in: rolesToInclude }
+    });
+
+    // console.log('Users with specified roles:', usersWithRoles); // Log fetched users
+
+    // Add these users to the selectedUsers array if not already included
+    const usersToAdd = usersWithRoles.map(user => user._id.toString());
+    const updatedSelectedUsers = [...new Set([...selectedUsers, ...usersToAdd])];
 
     // Create the lead
     const newLead = new BusinessLoanLead({
       service,
       client: clientId,
-      selectedUsers,
+      selectedUsers: updatedSelectedUsers,
       stage,
       description,
       source,
@@ -75,11 +106,13 @@ router.post('/create-lead', async (req, res) => {
     await newLead.save();
     res.status(201).json(newLead);
   } catch (error) {
+    console.error('Error creating lead:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Get all business loan leads
+
+// Get all business loan leads 
 router.get('/get-all-business-leads', async (req, res) => {
   try {
     const leads = await BusinessLoanLead.find().populate('client').populate('selectedUsers');

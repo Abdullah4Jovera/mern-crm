@@ -23,6 +23,7 @@ const businessLeadRouter = require('./routes/businessLeadRouter.js')
 const personalLeadRouter = require('./routes/personalLeadRouter.js')
 const mortgageLeadRouter = require('./routes/mortgageLeadRouter.js')
 const realEstateLeadRouter = require('./routes/realEstateLeadRouter.js')
+const searchLeadRouter = require('./routes/searchLeadRouter.js')
 const app = express();
 const server = http.createServer(app);
 
@@ -76,6 +77,8 @@ app.use('/api/business-lead', businessLeadRouter);
 app.use('/api/personal-lead', personalLeadRouter);
 app.use('/api/mortgage-lead', mortgageLeadRouter);
 app.use('/api/realestate-lead', realEstateLeadRouter);
+app.use('/api/search', searchLeadRouter);
+
 
 
 const port = process.env.PORT || 8080;

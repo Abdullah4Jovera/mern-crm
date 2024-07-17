@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema(
         'personalloansales','businessfinanceloansales','realestateloansales','mortgageloansales'
         
       ],
-      default: 'user',
+      default: 'user', 
       required: true,
     },
     googleId: { type: String, unique: true, sparse: true },

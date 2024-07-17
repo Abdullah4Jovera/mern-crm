@@ -14,9 +14,9 @@ const businessLoanLeadSchema = new Schema({
     required: true,
   },
   selectedUsers: [{
-    type: mongoose.Schema.Types.ObjectId, 
+    type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-  }],  
+  }], 
   stage: {
     type: String,
     required: true,

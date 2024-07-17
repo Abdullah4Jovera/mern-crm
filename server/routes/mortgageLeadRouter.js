@@ -44,34 +44,58 @@ router.post('/create-lead', async (req, res) => {
       return res.status(400).json({ error: 'Client ID or client details must be provided' });
     }
 
-    // Check if a lead already exists for the given client in any of the lead collections
-    const existingLeads = await Promise.all([
-      BusinessLoanLead.findOne({ client: clientId }),
-      PersonalLoanLead.findOne({ client: clientId }),
-      MortgageLoanLead.findOne({ client: clientId }) // Check for existing mortgage loan lead
-    ]);
+  // Check if a lead already exists for the given client in any of the lead collections
+  // Check if a lead already exists for the given client in any of the lead collections
+  // const existingLeads = await Promise.all([
+  //   BusinessLoanLead.findOne({ client: clientId }),
+  //   PersonalLoanLead.findOne({ client: clientId }),
+  //   MortgageLoanLead.findOne({ client: clientId }),
+  //   RealEstateLoanLead.findOne({ client: clientId }) // Check for existing real estate loan lead
+  // ]);
 
-    const existingBusinessLead = existingLeads[0];
-    const existingPersonalLead = existingLeads[1];
-    const existingMortgageLead = existingLeads[2]; // Capture existing mortgage lead
+  // const existingBusinessLead = existingLeads[0];
+  // const existingPersonalLead = existingLeads[1];
+  // const existingMortgageLead = existingLeads[2];
+  // const existingRealEstateLead = existingLeads[3]; // Capture existing real estate loan lead
 
-    if (existingBusinessLead) {
-      return res.status(400).json({ error: 'A business lead already exists for the client', lead: existingBusinessLead });
-    }
+  // if (existingBusinessLead) {
+  //   return res.status(400).json({ error: 'A business lead already exists for the client', lead: existingBusinessLead });
+  // }
 
-    if (existingPersonalLead) {
-      return res.status(400).json({ error: 'A personal lead already exists for the client', lead: existingPersonalLead });
-    }
+  // if (existingPersonalLead) {
+  //   return res.status(400).json({ error: 'A personal lead already exists for the client', lead: existingPersonalLead });
+  // }
 
-    if (existingMortgageLead) {
-      return res.status(400).json({ error: 'A mortgage lead already exists for the client', lead: existingMortgageLead });
-    }
+  // if (existingMortgageLead) {
+  //   return res.status(400).json({ error: 'A mortgage lead already exists for the client', lead: existingMortgageLead });
+  // }
 
+  // if (existingRealEstateLead) {
+  //   return res.status(400).json({ error: 'A real estate lead already exists for the client', lead: existingRealEstateLead });
+  // }
+
+    const rolesToInclude = [
+      'CEO', 
+      'MD',
+      'mortgageloanmanger', 
+      'mortgageloanHOD',
+      'mortgageloancordinator'
+    ];
+    
+    const usersWithRoles = await User.find({
+      'role': { $in: rolesToInclude }
+    });
+
+    // console.log('Users with specified roles:', usersWithRoles); // Log fetched users
+
+    // Add these users to the selectedUsers array if not already included
+    const usersToAdd = usersWithRoles.map(user => user._id.toString());
+    const updatedSelectedUsers = [...new Set([...selectedUsers, ...usersToAdd])];
     // Create the mortgage loan lead
     const newLead = new MortgageLoanLead({
       service,
       client: clientId,
-      selectedUsers,
+      selectedUsers: updatedSelectedUsers,
       stage,
       description,
       source,

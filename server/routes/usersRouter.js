@@ -367,7 +367,7 @@ router.post(
 
 router.get("/get-all-users", expressAsyncHandler(async (req, res) => {
     try {
-        const users = await User.find(); // Assuming the role field exists in the user model
+        const users = await User.find();
         res.status(200).json({ error: false, users });
     } catch (error) {
         res.status(500).json({ error: true, message: "Internal server error", details: error.message });
