@@ -1,0 +1,159 @@
+body {
+    background-color: #f7f7f9;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.TableClass {
+    margin-top: 15px;
+    border-radius: 10px;
+}
+
+.tbleHead {
+    font-size: 14px;
+}
+
+.animatedCardbusiness {
+    display: flex !important;
+}
+
+.businessloanCard {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.NumberValueCount {
+    background-color: #ffa000;
+    width: 40px;
+    height: 30px;
+    border-radius: 10%;
+    text-align: center;
+}
+
+.content {
+    text-align: start;
+}
+
+.AllBtnNav {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 15px;
+    gap: 10px;
+}
+
+.leadsClass {
+    display: flex;
+    justify-content: space-around;
+    /* align-items: center; */
+    width: 100%;
+    font-size: 1.25rem;
+    /* background-image: linear-gradient(to right, #ECE9E6 0%, #FFFFFF 51%, #ECE9E6 100%); */
+}
+
+.linkClassNav {
+    text-decoration: none;
+    color: goldenrod;
+    font-weight: 500;
+    text-align: center;
+    transition: all 0.4s ease;
+}
+
+
+.linkClassNav:hover {
+    background: linear-gradient(141.55deg, #ffa000 3.46%, #1c1c1c 99.86%), #ffa000 !important;
+    color: white;
+    transform: scale(1.09);
+    padding: 10px 8px;
+    border-radius: 5px;
+}
+
+.Businessdetails {
+    text-decoration: none;
+    color: black !important;
+    text-align: center;
+    background-image: linear-gradient(to right, #ECE9E6 0%, #FFFFFF 51%, #ECE9E6 100%);
+    padding: 3px;
+    border-radius: 8px;
+    font-weight: 500;
+    display: block;
+    background-size: 200% auto;
+}
+
+.AllleadsCardsContainer {
+    display: flex;
+    justify-content: space-around;
+}
+
+.btn-grad:hover {
+    background-position: right center;
+    color: #fff;
+    text-decoration: none;
+}
+
+
+.btn-grad:hover {
+    background-position: right center;
+    color: #fff;
+    text-decoration: none;
+}
+
+.card {
+    /* background: linear-gradient(#f9f0ea, #eff9fd) !important; */
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.table-container {
+    animation: fadeIn 1s ease-in-out;
+}
+
+.dropdownbtn {
+    background: linear-gradient(rgb(80, 78, 78), #2c3031) !important;
+    cursor: pointer;
+}
+
+@keyframes slideInFromLeft {
+    0% {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInFromRight {
+    0% {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.cardLeft {
+    animation: slideInFromLeft 1s ease-out;
+}
+
+.cardRight {
+    animation: slideInFromRight 1s ease-out;
+}

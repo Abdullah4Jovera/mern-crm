@@ -1,22 +1,26 @@
 const express = require('express');
 const router = express.Router();
-
+ 
 const BusinessLoanLead = require('../models/businessLoanLeadModel.js');
 const PersonalLoanLead = require('../models/personalLoanLeadModel.js');
 const User = require('../models/userModel.js');
 const MortgageLoanLead = require('../models/mortgageLoanLeadModel.js');
 const RealEstateLoanLead = require('../models/realEstateLoanLeadModel.js');
+const hasPermission = require('../hasPermission');
+const permissions = require('../permissions');
+const { isAuth } = require('../utils.js');
 
 // Route to check for any lead associated with client's contact number
-router.post('/check-lead', async (req, res) => {
+router.post('/check-lead',  isAuth,hasPermission([permissions.CHECK_LEAD]),async (req, res) => {
   const { contactNumber } = req.body;
+  const userId = req.user._id;
 
   if (!contactNumber) {
     return res.status(400).json({ error: 'Contact number must be provided' });
   }
-
+ 
   try {
-    // Find the user by contact number
+    console.log(userId);
     const user = await User.findOne({ contactNumber });
 
     if (!user) {

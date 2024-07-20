@@ -1,0 +1,163 @@
+.loginContainer {
+    height: 100vh;
+    background: linear-gradient(rgba(0, 0, 0, 0.5) , #eff9fd) !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.cardContainer {
+    width: 30rem !important;
+    background: linear-gradient(#f9f0ea, #eff9fd) !important;
+    border: none !important;
+
+}
+
+.divConatainer {
+    background-color: rgba(255, 255, 255, 0.1);
+    width: 100% !important;
+    max-width: 1250px !important;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    border-radius: 15px;
+    padding: 30px 0px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+
+@keyframes rotate {
+    0% {
+        transform: rotateY(0deg);
+    }
+
+    100% {
+        transform: rotateY(360deg);
+    }
+}
+
+.login_image {
+    animation: rotate 3s linear infinite;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+}
+
+@keyframes slideInFromTop {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.animated-container {
+    animation: slideInFromTop 1s ease-in-out;
+    height: 100vh;
+    background: linear-gradient(black, #eff9fd) !important;
+}
+
+.loginForm {
+    width: 100%;
+}
+
+.hrtag {
+    margin-top: 25px;
+}
+
+.classLabel {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 5px;
+    font-weight: 600;
+}
+
+.logoimg {
+    width: 100%;
+    max-width: 150px;
+    margin-bottom: 10px;
+}
+
+.forgotpass {
+    font-size: 16px;
+    text-decoration: none;
+    color: black;
+    font-weight: 600;
+}
+
+.classLabelforgot {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* margin-top: 5px; */
+}
+
+.signInfo {
+    font-size: 14px;
+    color: 'white' !important
+}
+
+.loginDiv {
+    background-color: black;
+    margin-top: 15px;
+    padding: 6px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.loginText {
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.logoJovera {
+    background-color: #172438;
+    height: 95vh;
+    margin-top: 10px;
+    border-radius: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.imageLogo {
+    width: 100%;
+    max-width: 400px;
+}
+
+.attentionText {
+    color: white;
+    font-size: 18px;
+}
+
+.verfifyAccount {
+    font-size: 16px;
+    margin-top: 15px;
+}
+
+@media only screen and (min-width:320px) and (max-width:768px) {
+    .divConatainer {
+        background-color: white;
+        width: 100% !important;
+        max-width: 1200px !important;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .login_image {
+        width: 170px;
+        height: 170px;
+    }
+
+}

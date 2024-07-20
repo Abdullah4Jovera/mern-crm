@@ -1,15 +1,18 @@
 const express = require('express');
 const expressAsyncHandler = require('express-async-handler');
 const HelpAndSupport = require('../models/helpAndSupportModel');
-const { isUser, isSuperAdmin } = require('../utils');
-const isAuth = require('../utils').isAuth;
+const { isAuth, hasRole } = require('../utils');
+
 
 const router = express.Router();
 
 // Route to create a new help and support request
 router.post(
   '/submit-help-and-support',
-  isAuth, isUser, 
+  isAuth, hasRole([
+    'user',
+  
+  ]), 
   expressAsyncHandler(async (req, res) => {
     const { supportType, message } = req.body;
     const userId = req.user._id;
@@ -27,7 +30,10 @@ router.post(
 // Route to get all help and support requests
 router.get(
     '/all-help-and-support',
-    isAuth, isSuperAdmin, 
+    isAuth, hasRole([
+      'superadmin',
+    
+    ]), 
     expressAsyncHandler(async (req, res) => {
       try {
         // Fetch all help and support requests and populate the 'user' field to include user details

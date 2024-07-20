@@ -4,7 +4,7 @@ const PersonalLoan = require('../models/personalLoanModel');
 const User = require('../models/userModel');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
-const { isAuth, isUser, isSuperAdmin, isPLM } = require('../utils');
+const { isAuth, hasRole } = require('../utils');
 const Notification = require('../models/notificationModel');
 const { getIO } = require('../socket');
 const storage = multer.diskStorage({});
@@ -15,7 +15,10 @@ cloudinary.config({
     api_secret: 'USb46ns9p4V7fAWMppTP54xiv00'
 });
 // POST route to apply for a personal loan
-router.post('/apply-for-personal-loan', isAuth , isUser, async (req, res) => {
+router.post('/apply-for-personal-loan', isAuth ,hasRole([
+  'user', 
+
+]), async (req, res) => {
     try {
       const { companyName, loanAmount, monthlySalary, anyLoan, message ,previousloanAmount } = req.body;
       const userId = req.user._id;
@@ -57,7 +60,10 @@ router.post('/apply-for-personal-loan', isAuth , isUser, async (req, res) => {
     }
   });
   
-  router.put('/upload-documents/:loanId', isAuth, isUser, upload.array('documents', 5), async (req, res) => {
+  router.put('/upload-documents/:loanId', isAuth, hasRole([
+    'user', 
+  
+  ]), upload.array('documents', 5), async (req, res) => {
     try {
         const { loanId } = req.params;
         const userId = req.user._id; // Get user ID from req.user
@@ -85,7 +91,7 @@ router.post('/apply-for-personal-loan', isAuth , isUser, async (req, res) => {
         personalLoan.documents = [...personalLoan.documents, ...uploadedDocuments];
 
         // Save the updated documents for the personal loan
-        await personalLoan.save();
+        await personalLoan.save(); 
 
         res.status(200).json({ message: 'Documents uploaded successfully' });
     } catch (error) {
@@ -95,7 +101,10 @@ router.post('/apply-for-personal-loan', isAuth , isUser, async (req, res) => {
 });
 
 // GET route to get all personal loans (for superadmin)
-router.get('/all-personal-loans', isAuth , isPLM,  async (req, res) => {
+router.get('/all-personal-loans', isAuth , hasRole([
+  'personalloanmanger', 'superadmin'
+
+]),  async (req, res) => {
   try {
       // Find all personal loans and populate the userId field with name and email only
       const personalLoans = await PersonalLoan.find().populate({
@@ -111,7 +120,10 @@ router.get('/all-personal-loans', isAuth , isPLM,  async (req, res) => {
 
 
 // PUT route to update the status of a personal loan (for superadmin)
-router.put('/update-loan-status/:loanId', isAuth, isSuperAdmin, async (req, res) => {
+router.put('/update-loan-status/:loanId', isAuth, hasRole([
+  'personalloanmanger', 'superadmin'
+
+]), async (req, res) => {
   try {
       const { loanId } = req.params;
       const { status } = req.body;

@@ -4,7 +4,7 @@ const MortgageLoan = require('../models/mortgageLoanModel');
 const User = require('../models/userModel');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
-const { isAuth, isUser, isSuperAdmin, isMLM } = require('../utils');
+const { isAuth, hasRole } = require('../utils');
 const Notification = require('../models/notificationModel');
 const { getIO } = require('../socket');
 const storage = multer.diskStorage({});
@@ -16,12 +16,15 @@ cloudinary.config({
 });
 
 // POST route to apply for a mortgage loan
-router.post('/apply-for-mortgage-loan', isAuth , isUser,  async (req, res) => {
+router.post('/apply-for-mortgage-loan', isAuth, hasRole([
+    'user',
+
+]), async (req, res) => {
     try {
         const { typeOfProperty, propertyLocation, monthlyIncome, message } = req.body;
         const userId = req.user._id;
         // Check if the user exists
-        const user = await User.findById(userId); 
+        const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
@@ -47,8 +50,8 @@ router.post('/apply-for-mortgage-loan', isAuth , isUser,  async (req, res) => {
         // Save the mortgage loan application
         await mortgageLoan.save();
 
-        
-    
+
+
         res.status(201).json({ message: 'Mortgage loan application submitted successfully' });
     } catch (error) {
         console.error('Error submitting mortgage loan application:', error);
@@ -57,11 +60,14 @@ router.post('/apply-for-mortgage-loan', isAuth , isUser,  async (req, res) => {
 });
 
 
-router.put('/upload-documents/:loanId', isAuth, isUser, upload.array('documents', 5), async (req, res) => {
+router.put('/upload-documents/:loanId', isAuth, hasRole([
+    'user',
+
+]), upload.array('documents', 5), async (req, res) => {
     try {
         const { loanId } = req.params;
-        const userId = req.user._id; 
-        
+        const userId = req.user._id;
+
         // Find the mortgage loan by ID
         const mortgageLoan = await MortgageLoan.findById(loanId);
         if (!mortgageLoan) {
@@ -70,7 +76,7 @@ router.put('/upload-documents/:loanId', isAuth, isUser, upload.array('documents'
         if (mortgageLoan.userId.toString() !== userId.toString()) {
             return res.status(401).json({ error: 'Unauthorized. User does not have permission to upload documents for this loan' });
         }
-        
+
         // Check if documents were uploaded
         if (!req.files || req.files.length === 0) {
             return res.status(400).json({ error: 'No documents uploaded' });
@@ -101,11 +107,14 @@ router.put('/upload-documents/:loanId', isAuth, isUser, upload.array('documents'
     }
 });
 
-
+ 
 
 
 // GET route to get all mortgage loans (for superadmin)
-router.get('/all-mortgage-loans', isAuth , isMLM,  async (req, res) => {
+router.get('/all-mortgage-loans', isAuth,hasRole([
+    'superadmin','mortgageloanmanger'
+
+]), async (req, res) => {
     try {
         // Find all mortgage loans and populate the userId field with name and email only
         const mortgageLoans = await MortgageLoan.find().populate({
@@ -120,7 +129,10 @@ router.get('/all-mortgage-loans', isAuth , isMLM,  async (req, res) => {
 });
 
 // PUT route to update the status of a mortgage loan (for superadmin)
-router.put('/update-loan-status/:loanId', isAuth, isSuperAdmin, async (req, res) => {
+router.put('/update-loan-status/:loanId', isAuth, hasRole([
+    'superadmin','mortgageloanmanger'
+
+]), async (req, res) => {
     try {
         const { loanId } = req.params;
         const { status } = req.body;

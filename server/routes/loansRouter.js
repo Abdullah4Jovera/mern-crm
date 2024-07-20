@@ -4,11 +4,14 @@ const BusinessFinanceLoan = require('../models/businessFinanceLoanModel');
 const MortgageLoan = require('../models/mortgageLoanModel');
 const PersonalLoan = require('../models/personalLoanModel');
 const RealEstateLoan = require('../models/realEstateLoanModel');
-const { isAuth, isUser, isSuperAdmin } = require('../utils');
+const { isAuth, hasRole  } = require('../utils');
 const User = require('../models/userModel');
 
 // Route to get all types of loans for a specific user
-router.get('/my-loans', isAuth, isUser, async (req, res) => {
+router.get('/my-loans', isAuth, hasRole([
+  'user',
+
+]), async (req, res) => {
   try {
     const userId = req.user._id;
     console.log(userId);
@@ -34,7 +37,10 @@ router.get('/my-loans', isAuth, isUser, async (req, res) => {
 });
 
 // Route to get all types of loans for all users (for superadmin)
-router.get('/all-loans', isAuth, isSuperAdmin, async (req, res) => {
+router.get('/all-loans', isAuth, hasRole([
+  'superadmin',
+
+]),async (req, res) => {
   try {
     // Find all loans
     const allBusinessFinanceLoans = await BusinessFinanceLoan.find();
@@ -54,7 +60,10 @@ router.get('/all-loans', isAuth, isSuperAdmin, async (req, res) => {
 });
 
 // Route to get a single loan information for a specific user
-router.get('/loan/:loanId', isAuth, isUser, async (req, res) => {
+router.get('/loan/:loanId', isAuth, hasRole([
+  'user',
+
+]), async (req, res) => {
   try {
     const userId = req.user._id;
     const { loanType } = req.body;

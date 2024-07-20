@@ -19,7 +19,7 @@ const realEstateLoanLeadSchema = new Schema({
   stage: {
     type: String,
     required: true,
-    enum: ['New Lead', 'Marketing Lead', 'Rejected', 'Closed', 'Follow Up', 'Under Calculation', 'Not Eligible', 'Final Discussion', 'Pending', 'Interested'],
+    enum: ['New Lead', 'Marketing Lead', 'Rejected',  'Follow Up',  'Service App Req', 'Pending', 'Interested'],
     default: 'New Lead',
   },
   description: {

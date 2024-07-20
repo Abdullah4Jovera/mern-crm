@@ -10,6 +10,7 @@ const { OAuth2Client } = require("google-auth-library");
 const expressAsyncHandler = require('express-async-handler');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const { assignPermissionsToRole } = require('../rolePermissions'); 
 const TOKEN_SECRET = process.env.JWT_SECRET;
 cloudinary.config({
     cloud_name: 'dn1oz4vt9',
@@ -22,7 +23,7 @@ const storage = multer.diskStorage({});
 const upload = multer({ storage });
 const client = new OAuth2Client("914723857650-1qa0dsvirt7gkgdgb8svb01j629efa5n.apps.googleusercontent.com");
 
-router.post("/google-signin", async (req, res) => {
+router.post("/google-signin",  async (req, res) => {
     try {
         const { accessToken, userData } = req.body; // Extract the access token and user data from the request body
 
@@ -379,7 +380,7 @@ router.get("/get-all-users", expressAsyncHandler(async (req, res) => {
 router.post('/register-user', expressAsyncHandler(async (req, res) => {
     try {
         const { name, email, password, contactNumber, image, role } = req.body;
-
+        const permissions = assignPermissionsToRole(role);  // Use the function correctly
         if (await User.findOne({ email })) {
             return res.status(400).json({ error: true, message: 'User with this email is already registered. Please login.' });
         }
@@ -397,7 +398,8 @@ router.post('/register-user', expressAsyncHandler(async (req, res) => {
             contactNumber,
             image,
             role,
-            verified: true
+            verified: true,
+            permissions,
         });
 
         await newUser.save();

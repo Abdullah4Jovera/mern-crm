@@ -20,7 +20,7 @@ const mortgageLoanLeadSchema = new Schema({
   stage: {
     type: String,
     required: true,
-    enum: ['New Lead', 'Marketing Lead', 'Rejected', 'Closed', 'Follow Up', 'Under Calculation', 'Not Eligible', 'Final Discussion', 'Pending', 'Interested'],
+    enum: ['New Lead', 'Marketing Lead', 'Rejected',  'Follow Up', 'Pending','Service App Req'],
     default: 'New Lead',
   },
   description: {
@@ -50,6 +50,16 @@ const mortgageLoanLeadSchema = new Schema({
     },
     default: null,
   },
+  createdby: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true, 
+  },
+  updatedby: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true, 
+  }],
 }, { timestamps: true });
 
 const MortgageLoanLead = mongoose.model('MortgageLoanLead', mortgageLoanLeadSchema);

@@ -4,13 +4,16 @@ const BusinessFinanceLoan = require('../models/businessFinanceLoanModel');
 const User = require('../models/userModel');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
-const { isAuth, isUser, isSuperAdmin, isBFM } = require('../utils');
+const { isAuth, hasRole } = require('../utils');
 const storage = multer.diskStorage({});
 const upload = multer({ storage });
 const { getIO } = require('../socket');
 
 // POST route to apply for a business finance loan 
-router.post('/apply-for-business-finance-loan', isAuth, isUser, async (req, res) => {
+router.post('/apply-for-business-finance-loan', isAuth, hasRole([
+    'user'
+  
+  ]), async (req, res) => {
     try {
         const { services, message } = req.body;
         const userId = req.user._id;
@@ -56,7 +59,10 @@ router.post('/apply-for-business-finance-loan', isAuth, isUser, async (req, res)
 });
 
 
-router.put('/upload-documents/:loanId', isAuth, isUser, upload.array('documents', 5), async (req, res) => {
+router.put('/upload-documents/:loanId', isAuth, hasRole([
+    'user'
+  
+  ]), upload.array('documents', 5), async (req, res) => {
     try {
         const { loanId } = req.params;
         const userId = req.user._id;
@@ -94,7 +100,10 @@ router.put('/upload-documents/:loanId', isAuth, isUser, upload.array('documents'
 
  
 // GET route to get all business finance loans (for superadmin)
-router.get('/all-business-finance-loans', isAuth , isBFM,  async (req, res) => {
+router.get('/all-business-finance-loans', isAuth , hasRole([
+    'businessfinanceloanmanger', 'superadmin'
+  
+  ]),  async (req, res) => {
     try {
         // Find all business finance loans and populate the userId field with name and email only
         const businessFinanceLoans = await BusinessFinanceLoan.find().populate({
@@ -110,7 +119,10 @@ router.get('/all-business-finance-loans', isAuth , isBFM,  async (req, res) => {
 
 
 // PUT route to update the status of a business finance loan (for superadmin)
-router.put('/update-loan-status/:loanId', isAuth, isSuperAdmin, async (req, res) => {
+router.put('/update-loan-status/:loanId', isAuth,hasRole([
+    'businessfinanceloanmanger', 'superadmin'
+  
+  ]), async (req, res) => {
     try {
         const { loanId } = req.params;
         const { status } = req.body;

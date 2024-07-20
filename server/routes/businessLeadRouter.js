@@ -4,18 +4,19 @@ const router = express.Router();
 
 const BusinessLoanLead = require('../models/businessLoanLeadModel.js');
 const PersonalLoanLead = require('../models/personalLoanLeadModel.js');
-const User = require('../models/userModel.js');
+const User = require('../models/userModel.js'); 
 const MortgageLoanLead = require('../models/mortgageLoanLeadModel.js');
 const RealEstateLoanLead = require('../models/realEstateLoanLeadModel.js');
-
-// Create a new lead (Business Loan Lead)
-router.post('/create-lead', async (req, res) => {
+const { isAuth, hasRole } = require('../utils.js');
+const Discussion = require('../models/discussionModel.js');
+const logActivity = require('../utils/logActivity.js');
+// Create Lead ....
+router.post('/create-lead', isAuth, async (req, res) => {
   const { service, client, selectedUsers = [], stage, description, source, labels, clientDetails } = req.body;
 
   try {
     let clientId = client;
 
-    // If client ID is not provided and client details are given, check for an existing user
     if (!clientId && clientDetails) {
       const existingUser = await User.findOne({ 
         $or: [
@@ -27,7 +28,6 @@ router.post('/create-lead', async (req, res) => {
       if (existingUser) {
         clientId = existingUser._id;
       } else {
-        // Hash the password before saving
         const hashedPassword = await bcrypt.hash('12345', 10); 
         const newUser = new User({
           ...clientDetails,
@@ -39,41 +39,10 @@ router.post('/create-lead', async (req, res) => {
       }
     }
     
-    // If client ID is still not available, return an error
     if (!clientId) {
       return res.status(400).json({ error: 'Client ID or client details must be provided' });
     }
 
-    // // Check if a lead already exists for the given client in any of the lead collections
-    // const existingLeads = await Promise.all([
-    //   BusinessLoanLead.findOne({ client: clientId }),
-    //   PersonalLoanLead.findOne({ client: clientId }),
-    //   MortgageLoanLead.findOne({ client: clientId }),
-    //   RealEstateLoanLead.findOne({ client: clientId }) // Check for existing real estate loan lead
-    // ]);
-
-    // const existingBusinessLead = existingLeads[0];
-    // const existingPersonalLead = existingLeads[1];
-    // const existingMortgageLead = existingLeads[2];
-    // const existingRealEstateLead = existingLeads[3]; // Capture existing real estate loan lead
-
-    // if (existingBusinessLead) {
-    //   return res.status(400).json({ error: 'A business lead already exists for the client', lead: existingBusinessLead });
-    // }
-
-    // if (existingPersonalLead) {
-    //   return res.status(400).json({ error: 'A personal lead already exists for the client', lead: existingPersonalLead });
-    // }
-
-    // if (existingMortgageLead) {
-    //   return res.status(400).json({ error: 'A mortgage lead already exists for the client', lead: existingMortgageLead });
-    // }
-
-    // if (existingRealEstateLead) {
-    //   return res.status(400).json({ error: 'A real estate lead already exists for the client', lead: existingRealEstateLead });
-    // }
-
-    // Fetch users with specified roles
     const rolesToInclude = [
       'CEO', 
       'MD',
@@ -86,13 +55,9 @@ router.post('/create-lead', async (req, res) => {
       'role': { $in: rolesToInclude }
     });
 
-    // console.log('Users with specified roles:', usersWithRoles); // Log fetched users
-
-    // Add these users to the selectedUsers array if not already included
     const usersToAdd = usersWithRoles.map(user => user._id.toString());
     const updatedSelectedUsers = [...new Set([...selectedUsers, ...usersToAdd])];
 
-    // Create the lead
     const newLead = new BusinessLoanLead({
       service,
       client: clientId,
@@ -104,6 +69,14 @@ router.post('/create-lead', async (req, res) => {
     });
 
     await newLead.save();
+
+    // Log activity
+    const activityLog = await logActivity(newLead._id, 'BusinessLoanLead', 'create', req.user._id, 'Created a new business loan lead');
+
+    // Update lead with activity log ID
+    newLead.activityLogs.push(activityLog._id);
+    await newLead.save();
+
     res.status(201).json(newLead);
   } catch (error) {
     console.error('Error creating lead:', error);
@@ -111,16 +84,29 @@ router.post('/create-lead', async (req, res) => {
   }
 });
 
-
 // Get all business loan leads 
 router.get('/get-all-business-leads', async (req, res) => {
   try {
-    const leads = await BusinessLoanLead.find().populate('client').populate('selectedUsers');
+    const leads = await BusinessLoanLead.find()
+      .populate('client', 'name') // Populate client with username only
+      .populate('selectedUsers', 'name') // Populate selectedUsers with username only
+      .populate({
+        path: 'activityLogs',
+        select: 'action details timestamp', // Select only action and details fields from activity logs
+        populate: { path: 'userId', select: 'name' } // Populate user field in activity logs with username
+      })
+      .populate({
+        path: 'discussions',
+        populate: { path: 'user', select: 'name' } // Populate user field in discussions with username
+      });
+
     res.status(200).json(leads);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
+
+
 
 // Transfer a business lead to a personal lead
 router.put('/transfer-lead/:leadId/:leadType', async (req, res) => {
@@ -183,6 +169,28 @@ router.put('/transfer-lead/:leadId/:leadType', async (req, res) => {
     res.status(200).json({ message: 'Lead transferred successfully', transferredLead: newLead });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+
+router.post('/discussions', async (req, res) => {
+  try {
+    const discussion = new Discussion(req.body);
+    await discussion.save();
+    
+    // Add discussion reference to BusinessLoanLead
+    const leadId = req.body.lead;
+    const businessLoanLead = await BusinessLoanLead.findById(leadId);
+    if (!businessLoanLead) {
+      return res.status(404).send({ error: 'BusinessLoanLead not found' });
+    }
+    
+    businessLoanLead.discussions.push(discussion._id);
+    await businessLoanLead.save();
+
+    res.status(201).send(discussion);
+  } catch (err) {
+    res.status(400).send(err);
   }
 });
 module.exports = router;

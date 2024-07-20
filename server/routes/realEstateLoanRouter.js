@@ -4,7 +4,7 @@ const RealEstateLoan = require('../models/realEstateLoanModel');
 const User = require('../models/userModel');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
-const { isAuth, isUser, isSuperAdmin, isRELM } = require('../utils');
+const { isAuth, hasRole } = require('../utils');
 const Notification = require('../models/notificationModel');
 const { getIO } = require('../socket');
 const storage = multer.diskStorage({});
@@ -16,7 +16,10 @@ cloudinary.config({
 });
 
 // POST route to apply for a real estate loan
-router.post('/apply-for-real-estate-loan', isAuth, isUser,  async (req, res) => {
+router.post('/apply-for-real-estate-loan', isAuth, hasRole([
+    'user', 
+  
+  ]),  async (req, res) => {
     try {
         const { propertyLocation, propertyPurpose, message, propertyType, propertyRange, propertyContains } = req.body;
 
@@ -61,7 +64,10 @@ router.post('/apply-for-real-estate-loan', isAuth, isUser,  async (req, res) => 
     }
 });
 
-router.put('/upload-documents/:loanId', isAuth, isUser, upload.array('documents', 5), async (req, res) => {
+router.put('/upload-documents/:loanId', isAuth, hasRole([
+    'user',
+  
+  ]), upload.array('documents', 5), async (req, res) => {
     try {
         const { loanId } = req.params;
         const userId = req.user._id;
@@ -89,7 +95,7 @@ router.put('/upload-documents/:loanId', isAuth, isUser, upload.array('documents'
 
         // Save the updated documents for the real estate loan
         await realEstateLoan.save();
-
+ 
         res.status(200).json({ message: 'Documents uploaded successfully' });
     } catch (error) {
         console.error('Error uploading documents:', error);
@@ -98,7 +104,10 @@ router.put('/upload-documents/:loanId', isAuth, isUser, upload.array('documents'
 });
 
 // GET route to get all real estate loans (for superadmin)
-router.get('/all-real-estate-loans', isAuth , isRELM,  async (req, res) => {
+router.get('/all-real-estate-loans', isAuth ,hasRole([
+    'realestateloanmanger', 'superadmin'
+  
+  ]),  async (req, res) => {
     try {
         // Find all real estate loans and populate the userId field with name and email only
         const realEstateLoans = await RealEstateLoan.find().populate({
@@ -114,7 +123,10 @@ router.get('/all-real-estate-loans', isAuth , isRELM,  async (req, res) => {
 
 
 // PUT route to update the status of a real estate loan (for superadmin)
-router.put('/update-loan-status/:loanId', isAuth, isSuperAdmin, async (req, res) => {
+router.put('/update-loan-status/:loanId', isAuth, hasRole([
+    'realestateloanmanger', 'superadmin'
+  
+  ]), async (req, res) => {
     try {
         const { loanId } = req.params;
         const { status } = req.body;

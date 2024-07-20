@@ -3,7 +3,7 @@ const cloudinary = require('cloudinary').v2;
 const Video = require('../models/videoModel');
 const multer = require('multer');
 const router = express.Router();
-const { isUser, isSuperAdmin, isAuth } = require('../utils');
+const {  isAuth , hasRole} = require('../utils');
 
 // Set up multer for file uploads
 const storage = multer.memoryStorage(); // Store file in memory
@@ -17,7 +17,10 @@ cloudinary.config({
 });
 
 // Create a new video
-router.post('/upload-video', isAuth , isSuperAdmin, upload.single('video'), async (req, res) => {
+router.post('/upload-video', isAuth , hasRole([
+    'superadmin',
+  
+  ]), upload.single('video'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ error: 'No file uploaded' });
