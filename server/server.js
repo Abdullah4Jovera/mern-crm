@@ -57,13 +57,8 @@ app.use(
 socket.initializeSocket(server);
 
 // Add a basic route to verify API is working
-app.get('/test', isAuth, hasRole([
-  'superadmin', 
-  'businessfinanceloanmanger', 
-  'businessfinanceloanHOD',
-  'businessfinanceloancordinator'
-]), (req, res) => {
-  res.send('API is working! Welcome to Mr.Naveed The frontend Web Developer... Continue Your Spirit....');
+app.get('/',(req, res) => {
+  res.send('API is working within Docker mounted! Welcome to Mr.Naveed The frontend Web Developer... Continue Your Spirit....');
 });
 
 app.use('/api/users', usersRouter);

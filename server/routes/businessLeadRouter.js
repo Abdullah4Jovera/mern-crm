@@ -193,4 +193,59 @@ router.post('/discussions', async (req, res) => {
     res.status(400).send(err);
   }
 });
+
+
+// Get single business loan lead by ID
+router.get('/get-business-lead/:id', async (req, res) => {
+  try {
+    const lead = await BusinessLoanLead.findById(req.params.id)
+      .populate('client', 'name') // Populate client with username only
+      .populate('selectedUsers', 'name') // Populate selectedUsers with username only
+      .populate({
+        path: 'activityLogs',
+        select: 'action details timestamp', // Select only action and details fields from activity logs
+        populate: { path: 'userId', select: 'name' } // Populate user field in activity logs with username
+      })
+      .populate({
+        path: 'discussions',
+        populate: { path: 'user', select: 'name' } // Populate user field in discussions with username
+      });
+
+    if (!lead) {
+      return res.status(404).json({ error: 'Lead not found' });
+    }
+
+    res.status(200).json(lead);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+// Update lead stage
+router.put('/update-lead-stage/:id', isAuth ,async (req, res) => {
+  const { id } = req.params;
+  const { stage } = req.body;
+
+  try {
+    // Find the lead by ID and update the stage
+    const lead = await BusinessLoanLead.findByIdAndUpdate(id, { stage }, { new: true });
+ 
+    if (!lead) {
+      return res.status(404).json({ error: 'Lead not found' });
+    }
+
+    // Log activity
+    const activityLog = await logActivity(lead._id, 'BusinessLoanLead', 'update', req.user._id, `Updated lead stage to ${stage}`);
+    
+    // Push activity log ID into lead's activityLogs array
+    lead.activityLogs.push(activityLog._id);
+    await lead.save();
+
+    res.status(200).json(lead);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+
 module.exports = router;
