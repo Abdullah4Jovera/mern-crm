@@ -44,12 +44,16 @@ const reducer = (state, action) => {
 const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [loading, setLoading] = useState(false);
+  const [timeoutId, setTimeoutId] = useState(null);
 
   useEffect(() => {
     const userinfo = JSON.parse(localStorage.getItem('userinfo'));
     if (userinfo) {
       dispatch({ type: 'SET_INITIAL_USER', payload: userinfo });
 
+      // Start timer for automatic logout after 30 seconds
+      startLogoutTimer();
+      
       if (userinfo.role === 'superadmin') {
         fetchLoans(userinfo.token);
       } else if (userinfo.role === 'businessfinanceloanmanger') {
@@ -57,6 +61,16 @@ const AuthProvider = ({ children }) => {
       }
     }
   }, [dispatch]);
+
+  const startLogoutTimer = () => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    const id = setTimeout(() => {
+      logout(); // Call logout after 30 minutes of inactivity
+    }, 30 * 60 * 1000); // 30 minutes in milliseconds
+    setTimeoutId(id);
+  };
 
   const fetchLoans = async (token) => {
     setLoading(true);
@@ -94,6 +108,7 @@ const AuthProvider = ({ children }) => {
     dispatch({ type: 'LOGIN', payload: userData });
     localStorage.setItem('userinfo', JSON.stringify(userData));
 
+    startLogoutTimer(); // Reset timer on login
     if (userData.role === 'superadmin') {
       fetchLoans(userData.token);
     } else if (userData.role === 'businessfinanceloanmanger') {
@@ -105,6 +120,7 @@ const AuthProvider = ({ children }) => {
     dispatch({ type: 'UPDATE_USER', payload: userData });
     localStorage.setItem('userinfo', JSON.stringify(userData));
 
+    startLogoutTimer(); // Reset timer on user update
     if (userData.role === 'superadmin') {
       fetchLoans(userData.token);
     } else if (userData.role === 'businessfinanceloanmanger') {
@@ -115,9 +131,8 @@ const AuthProvider = ({ children }) => {
   const logout = () => {
     dispatch({ type: 'LOGOUT' });
     localStorage.removeItem('userinfo');
+    clearTimeout(timeoutId); // Clear timer on logout
   };
-
-
 
   return (
     <AuthContext.Provider value={{ state, loading, login, logout, updateUser }}>

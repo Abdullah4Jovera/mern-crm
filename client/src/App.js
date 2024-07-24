@@ -60,6 +60,8 @@ import MortgageTeamLeadRoute from './Pages/routes/MortgageTeamLeadRoute';
 import MortgageLoanSaleDashboard from './Pages/MortgageLoan/MortgageLoanSale/MortgageLoanSaleDashboard';
 import MortgageLoanSaleRoute from './Pages/routes/MortgageLoanSaleRoute';
 import UpdateRolePermissions from './Pages/Ceo/UpdateRolePermissions';
+import BusinessLeadDetails from './Pages/BusinessFinanceLoan/BusinessDetails/BusinessLeadDetails';
+import AuthorizedRoute from './Pages/routes/AuthorizedRoute';
 
 function App() {
   return (
@@ -86,13 +88,21 @@ function App() {
 
 
           {/* Busines Routes */}
-          <Route path="/businessfinanceloanmangerdashboard" element={<BusinessManagerRoute ><BusinessManagerDashboard /></BusinessManagerRoute>} />
+          <Route
+            path="/businessfinanceloanmangerdashboard"
+            element={
+              <AuthorizedRoute allowedRoles={["CEO", "MD", "businessfinanceloanmanger"]}>
+                <BusinessManagerDashboard />
+
+              </AuthorizedRoute>
+            }
+          />
           <Route path="/businessfinanceloancordinator" element={<BusinessCoordinatorRoute ><BusinessCordinatorDashboard /></BusinessCoordinatorRoute>} />
           <Route path="/businessfinanceloanteamleader" element={<BusinessTeamLeadRoute ><BusinessTeamLeadDashboard /></BusinessTeamLeadRoute>} />
           <Route path="/businessfinanceloansales" element={<BusinessLoanSaleRoute ><BusinessLoanSaleDashboard /></BusinessLoanSaleRoute>} />
           <Route path="/businessfinanceloanHOD" element={<BusinessLoanHODRoute ><BusinessHODDashboard /></BusinessLoanHODRoute>} />
           {/* <Route path="/businessDetails/:id" element={<BusinessManagerRoute ><BusinessDetails /></BusinessManagerRoute>} /> */}
-
+          <Route path="/business-lead-details/:id" element={<AuthorizedRoute allowedRoles={["superadmin", "CEO", "MD", "businessfinanceloanmanger"]}><BusinessLeadDetails /></AuthorizedRoute>} />
           {/* Personal Routes */}
           <Route path="/personalloanmanger" element={<PersonalManagerRoute ><PersonalManagerDashboard /></PersonalManagerRoute>} />
           <Route path="/personalloanHOD" element={<PersonalLoanHODRoute ><PersonalLoanHODDashboard /></PersonalLoanHODRoute>} />

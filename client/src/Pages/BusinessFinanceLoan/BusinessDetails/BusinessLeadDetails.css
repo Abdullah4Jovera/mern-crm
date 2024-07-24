@@ -1,0 +1,45 @@
+/* BusinessLeadDetails.css */
+
+.lead-details {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    margin: 20px;
+}
+
+.lead-details-left {
+    flex: 1;
+}
+
+.lead-details-right {
+    flex: 1;
+}
+
+.lead-section {
+    margin-bottom: 20px;
+}
+
+.card {
+    width: 100%;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+.log-item,
+.discussion-item,
+.file-item {
+    margin-bottom: 10px;
+}
+
+/* Example styling for list items */
+.log-item p,
+.discussion-item p,
+.file-item p {
+    margin-bottom: 5px;
+}
