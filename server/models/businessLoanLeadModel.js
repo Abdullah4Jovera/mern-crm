@@ -30,7 +30,7 @@ const businessLoanLeadSchema = new Schema({
   source: {
     type: String,
     required: true,
-    enum: ['Marketing', 'Telesales', 'Other'],
+    enum: ['Marketing', 'Telesales', 'Self'],
   },
   labels: {
     type: [String],
@@ -66,11 +66,25 @@ const businessLoanLeadSchema = new Schema({
   }],
   activityLogs: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'ActivityLog',
+    ref: 'ActivityLog', 
   }],
   files: [{
     url: String,
     filename: String
+  }],
+  createdby: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true, 
+  },
+  isconverted: { // Added field
+    type: Boolean,
+    default: false, // Default value set to true
+  },
+  updatedby: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true, 
   }],
 }, { timestamps: true });
 

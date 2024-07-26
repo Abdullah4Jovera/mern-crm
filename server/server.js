@@ -85,7 +85,7 @@ app.use('/api/search', searchLeadRouter);
 
 app.use('/api/permissions', permissionsRouter);
 app.use('/api/roles', rolesRouter);
-app.use('/api', rolePermissionsRouter);
+app.use('/api', rolePermissionsRouter); 
 app.use('/uploads', uploadRouter);
 
 
