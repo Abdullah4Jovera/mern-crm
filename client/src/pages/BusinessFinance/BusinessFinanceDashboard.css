@@ -1,0 +1,22 @@
+/* BusinessManager.css */
+.lead-columns {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 1rem;
+  }
+  
+  .lead-column {
+    flex: 1;
+    min-width: 200px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    padding: 1rem;
+  }
+  
+  .lead-column h2 {
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+  

@@ -23,9 +23,9 @@ async function initializeSocket(server) {
         // Emit any unread notifications for the user
         const notifications = await Notification.find({ receiver: userId, read: false }).sort('timestamp');
         notifications.forEach(notification => {
-            socket.emit('newNotification', {
+            socket.emit('notifications', {
                 message: notification.message,
-                loanId: notification.entityId,
+                leadId: notification.entityId,
                 entityType: notification.entityType
             });
         });
@@ -80,7 +80,7 @@ function getIO() {
     if (!io) {
         throw new Error('Socket.IO has not been initialized.');
     }
-    return io;
+    return io; 
 }
 
 module.exports = {

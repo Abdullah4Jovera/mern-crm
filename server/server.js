@@ -57,13 +57,8 @@ app.use(
 socket.initializeSocket(server);
 
 // Add a basic route to verify API is working
-app.get('/test', isAuth, hasRole([
-  'superadmin', 
-  'businessfinanceloanmanger', 
-  'businessfinanceloanHOD',
-  'businessfinanceloancordinator'
-]), (req, res) => {
-  res.send('API is working! Welcome to Mr.Naveed The frontend Web Developer... Continue Your Spirit....');
+app.get('/',(req, res) => {
+  res.send('API is working within Docker mounted! Welcome to Mr.Naveed The frontend Web Developer... Continue Your Spirit....');
 });
 
 app.use('/api/users', usersRouter);
@@ -90,7 +85,7 @@ app.use('/api/search', searchLeadRouter);
 
 app.use('/api/permissions', permissionsRouter);
 app.use('/api/roles', rolesRouter);
-app.use('/api', rolePermissionsRouter);
+app.use('/api', rolePermissionsRouter); 
 app.use('/uploads', uploadRouter);
 
 
@@ -99,4 +94,3 @@ const port = process.env.PORT || 8080;
 server.listen(port, () => console.log(`Listening on port ${port}...`));
 
 
-//4028dfbeffmsh967ce280cc57bb2p1bdda1jsnf28bca1d5a60

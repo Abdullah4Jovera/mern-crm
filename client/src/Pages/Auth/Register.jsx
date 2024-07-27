@@ -8,7 +8,6 @@ import loginimage from '../../assets/loginImages/loginimage.png';
 import { Link } from 'react-router-dom';
 import "@sl-codeblaster/react-3d-animated-card";
 import AnimatedCard from "@sl-codeblaster/react-3d-animated-card";
-import Card from "react-animated-3d-card";
 import JoveraLogoweb from '../../assets/loginImages/JoveraLogoweb.png';
 
 const Register = () => {

@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema(
     otp: { type: String, default: null },
     otpExpiration: { type: Date, default: null },
     resetToken: { type: String, default: null }, 
-    resetTokenExpiration: { type: Date, default: null },
+    resetTokenExpiration: { type: Date, default: null }, 
     role: {
       type: String,
       enum: ['user', 'superadmin','CEO', 'MD', 

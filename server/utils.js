@@ -10,9 +10,7 @@ const generateToken = (user) => {
       permissions: user.permissions,
     },
     process.env.JWT_SECRET,
-    {
-      expiresIn: '30d',
-    }
+   
   );
 };
 
@@ -45,5 +43,4 @@ const hasRole = (roles) => {
  
 
 
-module.exports = { generateToken,  isAuth, hasRole, 
- };
+module.exports = { generateToken,  isAuth, hasRole,};
