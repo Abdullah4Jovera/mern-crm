@@ -142,7 +142,7 @@ router.put('/update-loan-status/:loanId', isAuth,hasRole([
         // Update the status
         loan.status = status;
         await loan.save();
-
+ 
         // Create a notification for the user
         const notification = new Notification({
             sender: req.user._id,
@@ -167,4 +167,4 @@ router.put('/update-loan-status/:loanId', isAuth,hasRole([
 });
 
 
-module.exports = router;
+module.exports = router; 
