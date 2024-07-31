@@ -23,15 +23,16 @@ async function initializeSocket(server) {
         // Emit any unread notifications for the user
         const notifications = await Notification.find({ receiver: userId, read: false }).sort('timestamp');
         notifications.forEach(notification => {
-            socket.emit('newNotification', {
+            socket.emit('notifications', {
                 message: notification.message,
-                loanId: notification.entityId,
-                entityType: notification.entityType
+                leadId: notification.entityId,
+                entityType: notification.entityType,
+                notificationId:notification._id
             });
         });
 
         // Mark notifications as read
-        await Notification.updateMany({ receiver: userId, read: false }, { read: true });
+        // await Notification.updateMany({ receiver: userId, read: false }, { read: true });
 
         // Listen for 'sendMessage' event
         socket.on('sendMessage', async (data) => {
@@ -80,7 +81,7 @@ function getIO() {
     if (!io) {
         throw new Error('Socket.IO has not been initialized.');
     }
-    return io;
+    return io; 
 }
 
 module.exports = {
