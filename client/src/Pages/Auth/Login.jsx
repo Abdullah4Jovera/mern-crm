@@ -23,29 +23,33 @@ const Login = () => {
     if (userinfo) {
       const role = userinfo.role;
       const roleBasedDashboard = {
-        CEO: '/CEO',
-        MD: '/MD',
+        CEO: '/ceodashboard',
+        MD: '/mddashboard',
         superadmin: '/superadmindashboard',
-        personalloanmanger: '/personalloanmangerdashboard',
-        personalloanHOD: '/personalloanHOD',
-        personalloancordinator: 'personalloancordinator',
-        personalloanteamleader: '/personalloanteamleader',
-        personalloansales: '/personalloansales',
-        businessfinanceloanmanger: '/businessfinanceloanmangerdashboard',
-        businessfinanceloancordinator: '/businessfinanceloancordinator',
-        businessfinanceloanteamleader: '/businessfinanceloanteamleader',
-        businessfinanceloansales: '/businessfinanceloansales',
-        mortgageloanmanger: '/mortgageloanmangerdashboard',
-        businessfinanceloanHOD: '/businessfinanceloanHOD',
+        personalloanmanger: '/personalloandashboard',
+        personalloanHOD: '/personalloandashboard',
+        personalloancordinator: 'personalloandashboard',
+        personalloanteamleader: '/personalloandashboard',
+        personalloansales: '/personalloandashboard',
+        businessfinanceloanmanger: '/businessfinancedashboard',
+        businessfinanceloancordinator: '/businessfinancedashboard',
+        businessfinanceloanteamleader: '/businessfinancedashboard',
+        businessfinanceloansales: '/businessfinancedashboard',
+        businessfinanceloanHOD: '/businessfinancedashboard',
         realestateloanmanger: '/realestateloanmangerdashboard',
         realestateloanHOD: '/realestateloanHOD',
         realestateloancordinator: '/realestateloancordinator',
         realestateloanteamleader: '/realestateloanteamleader',
         realestateloansales: '/realestateloansales',
+        mortgageloanmanger: '/mortgageloanmangerdashboard',
         mortgageloanHOD: '/mortgageloanHOD',
         mortgageloancordinator: '/mortgageloancordinator',
         mortgageloanteamleader: '/mortgageloanteamleader',
-        mortgageloansales: '/mortgageloansales'
+        mortgageloansales: '/mortgageloansales',
+        marketingagent:'/marketingdashboard',
+        marketingmanager:'/marketingdashboard',
+        telesaleagent:'/telesaledashboard',
+        telesaleteamleader:'/telesaledashboard',
       };
       navigate(roleBasedDashboard[role] || '/userdashboard');
     }
@@ -64,16 +68,16 @@ const Login = () => {
         CEO: '/ceodashboard',
         MD: '/mddashboard',
         superadmin: '/superadmindashboard',
-        personalloanmanger: '/personalloanmangerdashboard',
-        personalloanHOD: '/personalloanHOD',
-        personalloancordinator: 'personalloancordinator',
-        personalloanteamleader: '/personalloanteamleader',
-        personalloansales: '/personalloansales',
-        businessfinanceloanmanger: '/businessfinanceloanmangerdashboard',
-        businessfinanceloancordinator: '/businessfinanceloancordinator',
-        businessfinanceloanteamleader: '/businessfinanceloanteamleader',
-        businessfinanceloansales: '/businessfinanceloansales',
-        businessfinanceloanHOD: '/businessfinanceloanHOD',
+        personalloanmanger: '/personalloandashboard',
+        personalloanHOD: '/personalloandashboard',
+        personalloancordinator: 'personalloandashboard',
+        personalloanteamleader: '/personalloandashboard',
+        personalloansales: '/personalloandashboard',
+        businessfinanceloanmanger: '/businessfinancedashboard',
+        businessfinanceloancordinator: '/businessfinancedashboard',
+        businessfinanceloanteamleader: '/businessfinancedashboard',
+        businessfinanceloansales: '/businessfinancedashboard',
+        businessfinanceloanHOD: '/businessfinancedashboard',
         realestateloanmanger: '/realestateloanmangerdashboard',
         realestateloanHOD: '/realestateloanHOD',
         realestateloancordinator: '/realestateloancordinator',
@@ -83,12 +87,16 @@ const Login = () => {
         mortgageloanHOD: '/mortgageloanHOD',
         mortgageloancordinator: '/mortgageloancordinator',
         mortgageloanteamleader: '/mortgageloanteamleader',
-        mortgageloansales: '/mortgageloansales'
+        mortgageloansales: '/mortgageloansales',
+        marketingagent:'/marketingdashboard',
+        marketingmanager:'/marketingdashboard',
+        telesaleagent:'/telesaledashboard',
+        telesaleteamleader:'/telesaledashboard',
       };
       navigate(roleBasedDashboard[role] || '/userdashboard');
     } catch (error) {
       if (error.response) {
-        const { status, message } = error.response.data;
+        const { status } = error.response.data;
         switch (status) {
           case 404:
             toast.error('User not found.');

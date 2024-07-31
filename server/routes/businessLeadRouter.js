@@ -19,9 +19,7 @@ router.post('/create-lead', isAuth, async (req, res) => {
 
   try {
     let clientId = client;
-    // if(!selectedUsers){
-    //   selectedUsers =[]
-    // }
+
     // If client ID is not provided, check client details to create or find the client
     if (!clientId && clientDetails) {
       const existingUser = await User.findOne({
@@ -67,14 +65,7 @@ router.post('/create-lead', isAuth, async (req, res) => {
 
     // Include users with roles
     const usersToAdd = usersWithRoles.map(user => user._id.toString());
-    let uniqueUsers = new Set([...selectedUsers, ...usersToAdd]);
-
-    // Check if the source is Marketing and include marketing managers
-    if (source === 'Marketing') {
-      const marketingManagers = await User.find({ role: 'marketingmanager' });
-      const marketingManagerIds = marketingManagers.map(user => user._id.toString());
-      uniqueUsers = new Set([...uniqueUsers, ...marketingManagerIds]);
-    }
+    const uniqueUsers = new Set([...selectedUsers, ...usersToAdd]);
 
     // Add req.user._id if it's not already in the set
     if (!uniqueUsers.has(req.user._id.toString())) {
@@ -109,7 +100,6 @@ router.post('/create-lead', isAuth, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
 
 
 
@@ -345,11 +335,15 @@ router.put('/update-lead-stage/:id', isAuth, async (req, res) => {
 
 
 // Edit a lead (new route)
+// Edit a lead (new route)
+// Edit a lead (new route)
 router.put('/edit-lead/:id', isAuth, async (req, res) => {
   const { id } = req.params;
   const { service, clientId, clientDetails, selectedUsers = [], stage, description, source, labels } = req.body;
 
   try {
+    console.log(clientId);
+    let changeDetails = {};
     // Fetch the existing lead and populate client and selectedUsers
     const lead = await BusinessLoanLead.findById(id).populate('client').populate('selectedUsers');
     if (!lead) {
@@ -376,20 +370,13 @@ router.put('/edit-lead/:id', isAuth, async (req, res) => {
     // Update lead fields
     if (service !== undefined) lead.service = service;
     if (clientId !== undefined) lead.client = clientId;
-    if (selectedUsers !== undefined) lead.selectedUsers = selectedUsers;
     if (stage !== undefined) lead.stage = stage;
     if (description !== undefined) lead.description = description;
     if (source !== undefined) lead.source = source;
     if (labels !== undefined) lead.labels = labels;
     lead.updatedby = req.user._id;
 
-    // Save updated lead
-    const updatedLead = await lead.save();
-
-    // Initialize change details
-    let changeDetails = {};
-
-    // Update client details if provided
+    // Handle client details update
     if (clientDetails && clientId) {
       const client = await User.findById(clientId);
       if (client) {
@@ -430,6 +417,54 @@ router.put('/edit-lead/:id', isAuth, async (req, res) => {
       }
     }
 
+    // Define roles to include
+    const rolesToInclude = [
+      'superadmin',
+      'CEO',
+      'MD',
+      'businessfinanceloanmanger',
+      'businessfinanceloanHOD',
+      'businessfinanceloancordinator'
+    ];
+
+    // Find users with the specified roles
+    const usersWithRoles = await User.find({ role: { $in: rolesToInclude } });
+    const usersWithRolesIds = usersWithRoles.map(user => user._id.toString());
+    let uniqueUsers = new Set([...selectedUsers, ...usersWithRolesIds]);
+
+    // Check if the source is Marketing and adjust selected users
+    if (source === 'Marketing') {
+      // Include marketing managers
+      const marketingManagers = await User.find({ role: 'marketingmanager' });
+      const marketingManagerIds = marketingManagers.map(user => user._id.toString());
+      uniqueUsers = new Set([...uniqueUsers, ...marketingManagerIds]);
+
+      // Remove telesales team leaders if present
+      const telesalesTeamLeaders = await User.find({ role: 'telesaleteamleader' });
+      const telesalesTeamLeaderIds = telesalesTeamLeaders.map(user => user._id.toString());
+      uniqueUsers = new Set([...uniqueUsers].filter(userId => !telesalesTeamLeaderIds.includes(userId)));
+    }
+
+    // Check if the source is Telesales and adjust selected users
+    if (source === 'Telesales') {
+      const marketingManagers = await User.find({ role: 'marketingmanager' });
+      const marketingManagerIds = marketingManagers.map(user => user._id.toString());
+      uniqueUsers = new Set([...uniqueUsers].filter(userId => !marketingManagerIds.includes(userId)));
+    }
+
+    // Add req.user._id if it's not already in the set
+    if (!uniqueUsers.has(req.user._id.toString())) {
+      uniqueUsers.add(req.user._id.toString());
+    }
+
+    lead.selectedUsers = Array.from(uniqueUsers);
+
+    // Save updated lead
+    const updatedLead = await lead.save();
+
+    // Initialize change details
+    // let changeDetails = {};
+
     // Fetch updated lead with populated client and selected users
     const updatedLeadPopulated = await BusinessLoanLead.findById(id).populate('client').populate('selectedUsers');
     const updatedClientDoc = updatedLeadPopulated.client;
@@ -457,11 +492,11 @@ router.put('/edit-lead/:id', isAuth, async (req, res) => {
     });
 
     if (addedUserNames.length > 0) {
-      changeDetails['User Added in the lead'] = `Added: ${addedUserNames.join(', ')}`;
+      changeDetails['User Added in the lead '] = `Added: ${addedUserNames.join(', ')}`;
     }
 
     if (removedUserNames.length > 0) {
-      changeDetails['Users Removed from the lead'] = `Removed: ${removedUserNames.join(', ')}`;
+      changeDetails['Users Removed from the lead '] = `Removed: ${removedUserNames.join(', ')}`;
     }
 
     // Format the changes for notification
@@ -511,43 +546,7 @@ router.put('/edit-lead/:id', isAuth, async (req, res) => {
   }
 });
 
-// Utility function to get users with specific roles
-const getUsersWithRoles = async (roles) => {
-  return User.find({ role: { $in: roles } });
-};
 
-// Utility function to include users and marketing roles
-const includeUsersInSelectedUsers = async (selectedUsers, source) => {
-  // Define roles to include
-  const rolesToInclude = [
-    'superadmin',
-    'CEO',
-    'MD',
-    'businessfinanceloanmanger',
-    'businessfinanceloanHOD',
-    'businessfinanceloancordinator'
-  ];
-
-  // Find users with the specified roles
-  const usersWithRoles = await getUsersWithRoles(rolesToInclude);
-
-  // Include users with roles
-  let uniqueUsers = new Set([...selectedUsers, ...usersWithRoles.map(user => user._id.toString())]);
-
-  // Check if the source is Marketing and include marketing managers
-  if (source === 'Marketing') {
-    const marketingManagers = await User.find({ role: 'marketingmanager' });
-    const marketingManagerIds = marketingManagers.map(user => user._id.toString());
-    uniqueUsers = new Set([...uniqueUsers, ...marketingManagerIds]);
-  }
-
-  // Add req.user._id if it's not already in the set
-  if (!uniqueUsers.has(req.user._id.toString())) {
-    uniqueUsers.add(req.user._id.toString());
-  }
-
-  return Array.from(uniqueUsers);
-};
 
 
 module.exports = router;

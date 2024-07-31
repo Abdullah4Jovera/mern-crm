@@ -1,0 +1,27 @@
+.dashboard {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+.lead-column {
+  flex: 0 0 auto;
+  width: 300px; /* Adjust the width of each column */
+  margin-right: 10px; /* Space between columns */
+  display: flex;
+  flex-direction: column;
+}
+
+.flip-card {
+  margin-bottom: 10px; /* Space between cards */
+}
+
+.flip-card-inner {
+  display: flex;
+  flex-direction: column;
+}
+
+.flip-card-front {
+  display: flex;
+  flex-direction: column;
+}
