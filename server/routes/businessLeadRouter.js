@@ -104,11 +104,11 @@ router.post('/create-lead', isAuth, async (req, res) => {
 
 
 // Get all business loan leads where req.user._id is included in selectedUsers
-// Get all business loan leads where req.user._id is included in selectedUsers
 router.get('/get-all-business-leads', isAuth, async (req, res) => {
   try {
     const leads = await BusinessLoanLead.find({
-      selectedUsers: req.user._id // Filter leads where req.user._id is in selectedUsers
+      selectedUsers: req.user._id,
+      delstatus: false  // Filter leads where req.user._id is in selectedUsers
     })
       .populate('client', 'name email contactNumber') // Populate client with name, email, and contactNumber
       .populate('selectedUsers', 'name') // Populate selectedUsers with name
@@ -246,6 +246,9 @@ router.get('/get-business-lead/:id', isAuth, async (req, res) => {
     if (!lead) {
       return res.status(404).json({ error: 'Lead not found' });
     }
+    if (lead.delstatus === true) {
+      return res.status(403).json({ error: 'The lead has been deleted' });
+    }
 
     // Check if the requesting user is included in selectedUsers
     const isAuthorized = lead.selectedUsers.some(user => user._id.equals(req.user._id));
@@ -342,13 +345,14 @@ router.put('/edit-lead/:id', isAuth, async (req, res) => {
   const { service, clientId, clientDetails, selectedUsers = [], stage, description, source, labels } = req.body;
 
   try {
-    console.log(clientId);
+    
     let changeDetails = {};
     // Fetch the existing lead and populate client and selectedUsers
     const lead = await BusinessLoanLead.findById(id).populate('client').populate('selectedUsers');
     if (!lead) {
       return res.status(404).json({ error: 'Lead not found' });
     }
+   
 
     // Check if the user is authorized to edit this lead
     const isAuthorized = lead.selectedUsers.some(user => user._id.equals(req.user._id));
@@ -546,6 +550,33 @@ router.put('/edit-lead/:id', isAuth, async (req, res) => {
   }
 });
 
+// Update delstatus to true for a business loan lead
+router.put('/update-delstatus/:id', isAuth, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Find the lead by ID
+    const lead = await BusinessLoanLead.findById(id);
+    if (!lead) {
+      return res.status(404).json({ error: 'Lead not found' });
+    }
+
+    // Check if the requesting user is included in selectedUsers
+    const isAuthorized = lead.selectedUsers.some(user => user._id.equals(req.user._id));
+    if (!isAuthorized) {
+      return res.status(403).json({ error: 'You are not authorized to update this lead' });
+    }
+
+    // Update the delstatus field to true
+    lead.delstatus = true;
+    const updatedLead = await lead.save();
+
+    res.status(200).json(updatedLead);
+  } catch (error) {
+    console.error('Error updating delstatus:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 
 
