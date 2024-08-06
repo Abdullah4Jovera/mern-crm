@@ -12,6 +12,7 @@ const realEstateLoanLeadSchema = new Schema({
     ref: 'User',
     required: true,
   },
+
   selectedUsers: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -19,7 +20,7 @@ const realEstateLoanLeadSchema = new Schema({
   stage: {
     type: String,
     required: true,
-    enum: ['New Lead', 'Marketing Lead', 'Rejected',  'Follow Up',  'Service App Req', 'Pending', 'Interested'],
+    enum: ['New Lead', 'Marketing Lead', 'Follow Up',  'Pending', 'Interested', 'Service App Req', 'Rejected', ],
     default: 'New Lead',
   },
   description: {
@@ -29,7 +30,7 @@ const realEstateLoanLeadSchema = new Schema({
   source: {
     type: String,
     required: true,
-    enum: ['Marketing', 'Telesales', 'Other'],
+    enum: ['Marketing', 'Telesales', 'Self'],
   },
   labels: {
     type: [String], // Array of strings for labels
@@ -49,6 +50,46 @@ const realEstateLoanLeadSchema = new Schema({
     },
     default: null,
   },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    // required: true,
+  },
+  updatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    // required: true,
+  },
+  discussions: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Discussion',
+  }],
+  activityLogs: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ActivityLog', 
+  }],
+  files: [{
+    url: String,
+    filename: String
+  }],
+  createdby: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true, 
+  },
+  isconverted: { 
+    type: Boolean,
+    default: false, 
+  },
+  delstatus: {
+    type: Boolean,
+    default: false, 
+  },
+  updatedby: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true, 
+  }],
 }, { timestamps: true });
 
 const RealEstateLoanLead = mongoose.model('RealEstateLoanLead', realEstateLoanLeadSchema);

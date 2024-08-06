@@ -4,7 +4,7 @@ const { Schema } = mongoose;
 const businessLoanLeadSchema = new Schema({
   service: {
     type: String,
-    required: true,
+    // required: true,
     enum: ['Business Loan'],
     default: 'Business Loan',
   },
@@ -29,8 +29,14 @@ const businessLoanLeadSchema = new Schema({
   },
   source: {
     type: String,
+    required: true, 
+    enum: ['Marketing', 'Telesales', 'Self'],
+  },
+  subsource: {
+    type: String,
     required: true,
-    enum: ['Marketing', 'Telesales', 'Other'],
+    enum: ['Mobileapp', 'Facebook', 'Tiktok','Jovera'],
+    default: 'Mobileapp'
   },
   labels: {
     type: [String],
@@ -66,11 +72,29 @@ const businessLoanLeadSchema = new Schema({
   }],
   activityLogs: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'ActivityLog',
+    ref: 'ActivityLog', 
   }],
   files: [{
     url: String,
     filename: String
+  }],
+  createdby: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true, 
+  },
+  isconverted: { 
+    type: Boolean,
+    default: false, 
+  },
+  delstatus: {
+    type: Boolean,
+    default: false, 
+  },
+  updatedby: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true, 
   }],
 }, { timestamps: true });
 

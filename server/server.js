@@ -31,6 +31,9 @@ const path = require('path');
 const permissionsRouter = require('./routes/permissions');
 const rolesRouter = require('./routes/roles');
 const rolePermissionsRouter = require('./routes/rolePermissions');
+const notificationRouter = require('./routes/notificationRouter');
+const LeadRouter = require('./routes/leadRouter');
+
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(
@@ -57,13 +60,8 @@ app.use(
 socket.initializeSocket(server);
 
 // Add a basic route to verify API is working
-app.get('/test', isAuth, hasRole([
-  'superadmin', 
-  'businessfinanceloanmanger', 
-  'businessfinanceloanHOD',
-  'businessfinanceloancordinator'
-]), (req, res) => {
-  res.send('API is working! Welcome to Mr.Naveed The frontend Web Developer... Continue Your Spirit....');
+app.get('/',(req, res) => {
+  res.send('API is working within Docker mounted! Welcome to Mr.Naveed The frontend Web Developer... Continue Your Spirit....');
 });
 
 app.use('/api/users', usersRouter);
@@ -78,6 +76,7 @@ app.use('/api/feedbacks', feedbackRouter);
 app.use('/api/helpandsupport', helpAndSupportRouter);
 app.use('/api/properties', propertyRouter);
 app.use('/paypal', paypalRouter);
+app.use('/api/notification', notificationRouter);
 // app.use('/stripe', stripeRouter);
 // app.use('/api', flightRouter);
 
@@ -88,9 +87,11 @@ app.use('/api/mortgage-lead', mortgageLeadRouter);
 app.use('/api/realestate-lead', realEstateLeadRouter);
 app.use('/api/search', searchLeadRouter);
 
+app.use('/api/leads', LeadRouter);
+
 app.use('/api/permissions', permissionsRouter);
 app.use('/api/roles', rolesRouter);
-app.use('/api', rolePermissionsRouter);
+app.use('/api', rolePermissionsRouter); 
 app.use('/uploads', uploadRouter);
 
 
@@ -99,4 +100,3 @@ const port = process.env.PORT || 8080;
 server.listen(port, () => console.log(`Listening on port ${port}...`));
 
 
-//4028dfbeffmsh967ce280cc57bb2p1bdda1jsnf28bca1d5a60

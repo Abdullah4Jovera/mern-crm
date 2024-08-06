@@ -4,7 +4,7 @@ const { Schema } = mongoose;
 const personalLoanLeadSchema = new Schema({
   service: {
     type: String, 
-    required: true,
+    // required: true,
     enum: ['Personal Loan']
   },
   client: {
@@ -30,7 +30,7 @@ const personalLoanLeadSchema = new Schema({
   source: {
     type: String,
     required: true, 
-    enum: ['Marketing', 'Telesales', 'Other'],
+    enum: ['Marketing', 'Telesales', 'Self'],
   },
   labels: {
     type: [String], 
@@ -50,10 +50,40 @@ const personalLoanLeadSchema = new Schema({
     },
     default: null,
   },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    // required: true,
+  },
+  updatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    // required: true,
+  },
+  discussions: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Discussion',
+  }],
+  activityLogs: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ActivityLog', 
+  }],
+  files: [{
+    url: String,
+    filename: String
+  }],
   createdby: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true, 
+  },
+  isconverted: { 
+    type: Boolean,
+    default: false, 
+  },
+  delstatus: {
+    type: Boolean,
+    default: false, 
   },
   updatedby: [{
     type: mongoose.Schema.Types.ObjectId,

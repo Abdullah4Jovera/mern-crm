@@ -11,7 +11,7 @@ const permissions = require('../permissions');
 const { isAuth } = require('../utils.js');
 
 // Route to check for any lead associated with client's contact number
-router.post('/check-lead',  isAuth,hasPermission([permissions.CHECK_LEAD]),async (req, res) => {
+router.post('/check-lead',  isAuth, hasPermission([permissions.CHECK_LEAD]),async (req, res) => {
   const { contactNumber } = req.body;
   const userId = req.user._id;
 

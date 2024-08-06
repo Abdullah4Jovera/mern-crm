@@ -16,11 +16,11 @@ const mortgageLoanSchema = new mongoose.Schema({
   message: {
     type: String
   },
-  userId: {
+  userId: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
-  },
+  }],
   source: { type: String , default: 'Mobile App'},
   status: { type: String, enum: ['Request To Call', 'Submit Documents', 'Follow Up', 'Request To Signature', 'Reject' ], default: 'Request To Call' },
   applicationDate: { type: Date, default: Date.now },

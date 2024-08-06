@@ -16,7 +16,13 @@
   "CEO": [
     "create_lead",
     "read_lead",
-    "update_lead"
+    "update_lead",
+    "check_lead",
+    "create_user",
+    "read_user",
+    "update_user",
+    "delete_user",
+    "delete_lead"
   ],
   "businessfinanceloanmanger": [
     "create_lead",

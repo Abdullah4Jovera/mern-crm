@@ -9,7 +9,6 @@ const permissions = {
     READ_LEAD: 'read_lead',
     UPDATE_LEAD: 'update_lead',
     DELETE_LEAD: 'delete_lead',
-
     CHECK_LEAD: 'check_lead',
 
 };

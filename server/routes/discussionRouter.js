@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const Discussion = require('../models/Discussion'); // Adjust the path as necessary
+const Discussion = require('../models/discussionModel'); // Adjust the path as necessary
 
 // POST /api/discussions - Create a new discussion
-router.post('/', async (req, res) => {
+router.post('/', isAuth ,  async (req, res) => {
   try {
-    const { user, message, leadType, leadId } = req.body;
+    const {  message, leadType, leadId } = req.body;
 
     // Create a new discussion instance
     const newDiscussion = new Discussion({

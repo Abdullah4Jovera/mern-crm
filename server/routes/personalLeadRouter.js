@@ -1,21 +1,26 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const router = express.Router();
-
+const logActivity = require('../utils/logActivity.js');
+const { getIO } = require('../socket');
 const BusinessLoanLead = require('../models/businessLoanLeadModel.js');
 const PersonalLoanLead = require('../models/personalLoanLeadModel.js');
 const User = require('../models/userModel.js');
+const { isAuth } = require('../utils.js');
+const Discussion = require('../models/discussionModel.js');
+const Notification = require('../models/notificationModel.js');
+const MortgageLoanLead = require('../models/mortgageLoanLeadModel.js');
+const RealEstateLoanLead = require('../models/realEstateLoanLeadModel.js');
 
 // Create a new personal loan lead
-router.post('/create-lead', async (req, res) => {
-  const { service, client, selectedUsers, stage, description, source, labels, clientDetails } = req.body;
+router.post('/create-lead', isAuth, async (req, res) => {
+  const { service='Personal Loan', client, selectedUsers = [], stage, description, source, labels, clientDetails } = req.body;
 
   try {
     let clientId = client;
 
-    // If client ID is not provided and client details are given, check for an existing user
     if (!clientId && clientDetails) {
-      const existingUser = await User.findOne({ 
+      const existingUser = await User.findOne({
         $or: [
           { email: clientDetails.email },
           { contactNumber: clientDetails.contactNumber }
@@ -25,7 +30,6 @@ router.post('/create-lead', async (req, res) => {
       if (existingUser) {
         clientId = existingUser._id;
       } else {
-        // Hash the password before saving
         const hashedPassword = await bcrypt.hash('12345', 10);
         const newUser = new User({
           ...clientDetails,
@@ -37,150 +41,554 @@ router.post('/create-lead', async (req, res) => {
       }
     }
 
-    // If client ID is still not available, return an error
     if (!clientId) {
       return res.status(400).json({ error: 'Client ID or client details must be provided' });
     }
 
-    // Check if a lead already exists for the given client in any of the lead collections
-     // Check if a lead already exists for the given client in any of the lead collections
-    //  const existingLeads = await Promise.all([
-    //   BusinessLoanLead.findOne({ client: clientId }),
-    //   PersonalLoanLead.findOne({ client: clientId }),
-    //   MortgageLoanLead.findOne({ client: clientId }),
-    //   RealEstateLoanLead.findOne({ client: clientId }) // Check for existing real estate loan lead
-    // ]);
-
-    // const existingBusinessLead = existingLeads[0];
-    // const existingPersonalLead = existingLeads[1];
-    // const existingMortgageLead = existingLeads[2];
-    // const existingRealEstateLead = existingLeads[3]; // Capture existing real estate loan lead
-
-    // if (existingBusinessLead) {
-    //   return res.status(400).json({ error: 'A business lead already exists for the client', lead: existingBusinessLead });
-    // }
-
-    // if (existingPersonalLead) {
-    //   return res.status(400).json({ error: 'A personal lead already exists for the client', lead: existingPersonalLead });
-    // }
-
-    // if (existingMortgageLead) {
-    //   return res.status(400).json({ error: 'A mortgage lead already exists for the client', lead: existingMortgageLead });
-    // }
-
-    // if (existingRealEstateLead) {
-    //   return res.status(400).json({ error: 'A real estate lead already exists for the client', lead: existingRealEstateLead });
-    // }
-
-     // Fetch users with specified roles
-     const rolesToInclude = [
-      'CEO', 
+    const rolesToInclude = [
+      'superadmin',
+      'CEO',
       'MD',
       'personalloanmanger',
       'personalloanHOD',
-      'personalloancordinator'
     ];
-    
+
     const usersWithRoles = await User.find({
-      'role': { $in: rolesToInclude }
+      role: { $in: rolesToInclude }
     });
 
-    console.log('Users with specified roles:', usersWithRoles); // Log fetched users
-
-    // Add these users to the selectedUsers array if not already included
     const usersToAdd = usersWithRoles.map(user => user._id.toString());
-    const updatedSelectedUsers = [...new Set([...selectedUsers, ...usersToAdd])];
-    // Create the personal loan lead
-    const newLead = new PersonalLoanLead({
-      service,
-      client: clientId,
-      selectedUsers: updatedSelectedUsers,
-      stage,
-      description,
-      source,
-      labels,
-    });
+    const uniqueUsers = new Set([...selectedUsers, ...usersToAdd]);
+
+    if (!uniqueUsers.has(req.user._id.toString())) {
+      uniqueUsers.add(req.user._id.toString());
+    }
+
+          const newLead = new PersonalLoanLead({
+            service,
+            client: clientId,
+            selectedUsers: Array.from(uniqueUsers),
+            stage,
+            description,
+            source,
+            labels,
+            createdby: req.user._id,
+            updatedby: req.user._id,
+          });
 
     await newLead.save();
+
+    const activityLog = await logActivity(newLead._id, 'PersonalLoanLead', 'create', req.user._id, `Created a new personal loan lead by ${req.user.name}`);
+
+    newLead.activityLogs.push(activityLog._id);
+    await newLead.save();
+
     res.status(201).json(newLead);
   } catch (error) {
+    console.error('Error creating lead:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Get all personal loan leads
-router.get('/get-all-personal-loan-leads', async (req, res) => {
+router.put('/edit-lead/:id', isAuth, async (req, res) => {
+  const { id } = req.params;
+  const { service, clientId, clientDetails, selectedUsers = [], stage, description, source, labels } = req.body;
+
   try {
-    const leads = await PersonalLoanLead.find().populate('client').populate('selectedUsers');
+    let changeDetails = {};
+    // Fetch the existing lead and populate client and selectedUsers
+    const lead = await PersonalLoanLead.findById(id).populate('client').populate('selectedUsers');
+    if (!lead) {
+      return res.status(404).json({ error: 'Lead not found' });
+    }
+
+    // Check if the user is authorized to edit this lead
+    const isAuthorized = lead.selectedUsers.some(user => user._id.equals(req.user._id));
+    if (!isAuthorized) {
+      return res.status(403).json({ error: 'You are not authorized to edit this lead' });
+    }
+
+    // Capture original values
+    const originalLead = {
+      service: lead.service,
+      client: lead.client ? lead.client.toObject() : null,
+      selectedUsers: lead.selectedUsers.map(user => user._id.toString()),
+      stage: lead.stage,
+      description: lead.description,
+      source: lead.source,
+      labels: lead.labels
+    };
+
+    // Update lead fields
+    if (service !== undefined) lead.service = service;
+    if (clientId !== undefined) lead.client = clientId;
+    if (stage !== undefined) lead.stage = stage;
+    if (description !== undefined) lead.description = description;
+    if (source !== undefined) lead.source = source;
+    if (labels !== undefined) lead.labels = labels;
+    lead.updatedby = req.user._id;
+
+    // Handle client details update
+    if (clientDetails && clientId) {
+      const client = await User.findById(clientId);
+      if (client) {
+        const originalClientDetails = {
+          name: client.name,
+          email: client.email,
+          contactNumber: client.contactNumber
+        };
+
+        // Update client details
+        client.name = clientDetails.name || client.name;
+        client.email = clientDetails.email || client.email;
+        client.contactNumber = clientDetails.contactNumber || client.contactNumber;
+        await client.save();
+
+        // Capture updated client details
+        const updatedClientDetails = {
+          name: client.name,
+          email: client.email,
+          contactNumber: client.contactNumber
+        };
+
+        // Identify changes in client details
+        let clientChangeDetails = '';
+        Object.keys(originalClientDetails).forEach(key => {
+          if (originalClientDetails[key] !== updatedClientDetails[key]) {
+            clientChangeDetails += `${key.charAt(0).toUpperCase() + key.slice(1)}: ${originalClientDetails[key] || 'None'} → ${updatedClientDetails[key] || 'None'}, `;
+          }
+        });
+
+        // Remove trailing comma and space
+        clientChangeDetails = clientChangeDetails.trim().replace(/,$/, '');
+
+        // Add client change details to the change summary
+        if (clientChangeDetails) {
+          changeDetails['client'] = `Client details changed: ${clientChangeDetails}`;
+        }
+      }
+    }
+
+            // Define roles to include
+            const rolesToInclude = [
+              'superadmin',
+              'CEO',
+              'MD',
+              'personalloanmanger',
+              'personalloanHOD',
+            ];
+
+    // Find users with the specified roles
+    const usersWithRoles = await User.find({ role: { $in: rolesToInclude } });
+    const usersWithRolesIds = usersWithRoles.map(user => user._id.toString());
+    let uniqueUsers = new Set([...selectedUsers, ...usersWithRolesIds]);
+
+    // Check if the source is Marketing and adjust selected users
+    if (source === 'Marketing') {
+      // Include marketing managers
+      const marketingManagers = await User.find({ role: 'marketingmanager' });
+      const marketingManagerIds = marketingManagers.map(user => user._id.toString());
+      uniqueUsers = new Set([...uniqueUsers, ...marketingManagerIds]);
+
+      // Remove telesales team leaders if present
+      const telesalesTeamLeaders = await User.find({ role: 'telesaleteamleader' });
+      const telesalesTeamLeaderIds = telesalesTeamLeaders.map(user => user._id.toString());
+      uniqueUsers = new Set([...uniqueUsers].filter(userId => !telesalesTeamLeaderIds.includes(userId)));
+    }
+
+    // Check if the source is Telesales and adjust selected users
+    if (source === 'Telesales') {
+      const marketingManagers = await User.find({ role: 'marketingmanager' });
+      const marketingManagerIds = marketingManagers.map(user => user._id.toString());
+      uniqueUsers = new Set([...uniqueUsers].filter(userId => !marketingManagerIds.includes(userId)));
+    }
+
+    // Add req.user._id if it's not already in the set
+    if (!uniqueUsers.has(req.user._id.toString())) {
+      uniqueUsers.add(req.user._id.toString());
+    }
+
+    lead.selectedUsers = Array.from(uniqueUsers);
+
+    // Save updated lead
+    const updatedLead = await lead.save();
+
+    // Fetch updated lead with populated client and selected users
+    const updatedLeadPopulated = await PersonalLoanLead.findById(id).populate('client').populate('selectedUsers');
+    const updatedClientDoc = updatedLeadPopulated.client;
+    const updatedClient = updatedClientDoc ? updatedClientDoc.toObject() : null;
+    const updatedUserIds = updatedLeadPopulated.selectedUsers.map(user => user._id.toString());
+
+    // Identify added and removed users
+    const addedUsers = updatedUserIds.filter(id => !originalLead.selectedUsers.includes(id));
+    const removedUsers = originalLead.selectedUsers.filter(id => !updatedUserIds.includes(id));
+
+    // Get user details
+    const getUserNames = async (userIds) => {
+      const users = await User.find({ _id: { $in: userIds } });
+      return users.map(user => user.name);
+    };
+
+    const addedUserNames = await getUserNames(addedUsers);
+    const removedUserNames = await getUserNames(removedUsers);
+
+    // Identify changes in the lead
+    Object.keys(originalLead).forEach(key => {
+      if (key !== 'selectedUsers' && key !== 'client' && JSON.stringify(originalLead[key]) !== JSON.stringify(updatedLead[key])) {
+        changeDetails[key] = `${originalLead[key]} → ${updatedLead[key]}`;
+      }
+    });
+
+    if (addedUserNames.length > 0) {
+      changeDetails['User Added in the lead '] = `Added: ${addedUserNames.join(', ')}`;
+    }
+
+    if (removedUserNames.length > 0) {
+      changeDetails['Users Removed from the lead '] = `Removed: ${removedUserNames.join(', ')}`;
+    }
+
+    // Format the changes for notification
+    const changes = Object.keys(changeDetails).map(key => `${key}: ${changeDetails[key]}`);
+
+    // Prepare activity log message
+    const activityLogMessage = `Edited personal loan lead by ${req.user.name}. Changes: ${changes.join(', ')}`;
+    const activityLog = await logActivity(updatedLead._id, 'PersonalLoanLead', 'edit', req.user._id, activityLogMessage);
+    updatedLead.activityLogs.push(activityLog._id);
+    await updatedLead.save();
+
+    // Notify all selected users about the update
+    const clientName = updatedClient ? updatedClient.name : 'Unknown Client';
+    const io = getIO();
+
+    // Create and save notifications
+    const notifications = await Promise.all(
+      lead.selectedUsers.map(async user => {
+        const notificationMessage = `Personal loan lead for ${clientName} has been updated by ${req.user.name}. Changes: ${changes.join(', ')}`;
+        const notification = new Notification({
+          sender: req.user._id,
+          receiver: user._id,
+          entityType: 'PersonalLoanLead',
+          entityId: updatedLead._id,
+          message: notificationMessage,
+        });
+
+        // Save notification and return saved instance
+        return await notification.save();
+      })
+    );
+
+    // Emit notifications with ID
+    notifications.forEach(notification => {
+      io.to(notification.receiver.toString()).emit('notifications', {
+        message: notification.message,
+        leadId: notification.entityId,
+        entityType: notification.entityType,
+        notificationId: notification._id // Include the notification ID
+      });
+    });
+
+    res.status(200).json(updatedLead);
+  } catch (error) {
+    console.error('Error editing lead:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get all personal loan leads
+router.get('/get-all-personal-loan-leads', isAuth, async (req, res) => {
+  try {
+    const leads = await PersonalLoanLead.find({
+      selectedUsers: req.user._id,
+      delstatus: false
+    })
+      .populate('client', 'name email contactNumber')
+      .populate('selectedUsers', 'name image')
+      .populate({
+        path: 'activityLogs',
+        select: 'action details timestamp',
+        populate: { path: 'userId', select: 'name' }
+      })
+      .populate({
+        path: 'discussions',
+        populate: { path: 'user', select: 'name' }
+      });
+
     res.status(200).json(leads);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-router.put('/transfer-personal-lead/:leadId/:leadType', async (req, res) => {
-    const { leadId, leadType } = req.params;
-  
-    try {
-      // Determine the appropriate model based on leadType
-      let LeadModel;
-      let serviceType;
-  
-      switch (leadType) {
-        case 'Business':
-          LeadModel = BusinessLoanLead;
-          serviceType = 'Business Loan';
-          break;
-        case 'Mortgage':
-          LeadModel = MortgageLoanLead;
-          serviceType = 'Mortgage Loan';
-          break;
-        case 'RealEstate':
-          LeadModel = RealEstateLoanLead;
-          serviceType = 'Real Estate Loan';
-          break;
-        default:
-          return res.status(400).json({ error: 'Invalid lead type provided' });
-      }
-  
-      // Find the personal loan lead to transfer
-      const personalLead = await PersonalLoanLead.findById(leadId);
-  
-      if (!personalLead) {
-        return res.status(404).json({ error: 'Personal loan lead not found' });
-      }
-  
-      // Create a new lead of the specified type
-      const newLead = new LeadModel({
-        service: serviceType,
-        client: personalLead.client,
-        selectedUsers: personalLead.selectedUsers,
-        stage: personalLead.stage,
-        description: personalLead.description,
-        source: personalLead.source,
-        labels: personalLead.labels,
-        transferredfrom: {
-          leadType: 'PersonalLoanLead',
-          leadId: personalLead._id,
-        },
+// Get a personal loan lead by ID
+router.get('/get-personal-loan-lead/:id', isAuth, async (req, res) => {
+  try {
+    const lead = await PersonalLoanLead.findById(req.params.id)
+      .populate('client', 'name email contactNumber')
+      .populate('selectedUsers', 'name role image')
+      .populate({
+        path: 'activityLogs',
+        select: 'action details timestamp',
+        populate: { path: 'userId', select: 'name image' }
+      })
+      .populate({
+        path: 'discussions',
+        populate: { path: 'user', select: 'name image' }
       });
-  
-      await newLead.save();
-  
-      // Update the personal loan lead with transfer information
-      personalLead.transferredTo = {
-        leadType: `${leadType}LoanLead`, // Adjust based on your naming convention
-        leadId: newLead._id,
-      };
-  
-      await personalLead.save();
-  
-      res.status(200).json({ message: 'Lead transferred successfully', transferredLead: newLead });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
+
+    if (!lead) {
+      return res.status(404).json({ error: 'Lead not found' });
     }
-  });
+    if (lead.delstatus === true) {
+      return res.status(403).json({ error: 'The lead has been deleted' });
+    }
 
+    const isAuthorized = lead.selectedUsers.some(user => user._id.equals(req.user._id));
 
+    if (!isAuthorized) {
+      return res.status(403).json({ error: 'You are not authorized to view this lead' });
+    }
+
+    res.status(200).json(lead);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update personal loan lead stage
+router.put('/update-personal-loan-lead-stage/:id', isAuth, async (req, res) => {
+  const { id } = req.params;
+  const { stage } = req.body;
+
+  try {
+    const lead = await PersonalLoanLead.findById(id).populate('client');
+    if (!lead) {
+      return res.status(404).json({ error: 'Lead not found' });
+    }
+
+    const isAuthorized = lead.selectedUsers.some(user => user._id.equals(req.user._id));
+    if (!isAuthorized) {
+      return res.status(403).json({ error: 'You are not authorized to update the lead stage' });
+    }
+
+    const previousStage = lead.stage;
+    lead.stage = stage;
+    const updatedLead = await lead.save();
+
+    const activityLog = await logActivity(
+      updatedLead._id,
+      'PersonalLoanLead',
+      'update',
+      req.user._id,
+      `Updated lead stage from ${previousStage} to ${stage} by ${req.user.name}.`
+    );
+
+    updatedLead.activityLogs.push(activityLog._id);
+    await updatedLead.save();
+
+    const clientName = lead.client ? lead.client.name : 'Unknown Client';
+
+    const io = getIO();
+    const notifications = [];
+
+    for (const userId of lead.selectedUsers) {
+      const notification = new Notification({
+        sender: req.user._id,
+        receiver: userId,
+        entityType: 'PersonalLoanLead',
+        entityId: updatedLead._id,
+        message: `Lead stage of ${clientName} has been updated from ${previousStage} to ${stage} by ${req.user.name}.`,
+      });
+
+      const savedNotification = await notification.save();
+      notifications.push(savedNotification);
+      
+      io.to(userId.toString()).emit('notifications', {
+        message: savedNotification.message,
+        leadId: savedNotification.entityId,
+        entityType: savedNotification.entityType,
+        notificationId: savedNotification._id
+      });
+    }
+
+    res.status(200).json(updatedLead);
+  } catch (error) {
+    console.error('Error updating lead stage:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Transfer a personal loan lead to another lead type
+router.put('/transfer-personal-lead/:leadId/:leadType', isAuth, async (req, res) => {
+  const { leadId, leadType } = req.params;
+
+  try {
+    let LeadModel;
+    let serviceType;
+
+    switch (leadType) {
+      case 'Business':
+        LeadModel = BusinessLoanLead;
+        serviceType = 'Business Loan';
+        break;
+      case 'Mortgage':
+        LeadModel = MortgageLoanLead;
+        serviceType = 'Mortgage Loan';
+        break;
+      case 'RealEstate':
+        LeadModel = RealEstateLoanLead;
+        serviceType = 'Real Estate Loan';
+        break;
+      default:
+        return res.status(400).json({ error: 'Invalid lead type provided' });
+    }
+
+    const personalLead = await PersonalLoanLead.findById(leadId);
+
+    if (!personalLead) {
+      return res.status(404).json({ error: 'Personal loan lead not found' });
+    }
+
+    const newLead = new LeadModel({
+      service: serviceType,
+      client: personalLead.client,
+      selectedUsers: personalLead.selectedUsers,
+      stage: personalLead.stage,
+      description: personalLead.description,
+      source: personalLead.source,
+      labels: personalLead.labels,
+      transferredfrom: {
+        leadType: 'PersonalLoanLead',
+        leadId: personalLead._id,
+      },
+    });
+
+    await newLead.save();
+
+    personalLead.transferredTo = {
+      leadType: `${leadType}LoanLead`,
+      leadId: newLead._id,
+    };
+
+    await personalLead.save();
+
+    res.status(200).json({ message: 'Lead transferred successfully', transferredLead: newLead });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Discussions
+router.post('/discussions', isAuth, async (req, res) => {
+  try {
+    const { _id: userId } = req.user;
+    
+    const discussion = new Discussion({
+      user: userId,
+      message: req.body.message,
+      leadType: req.body.leadType,
+      lead: req.body.lead
+    });
+
+    await discussion.save();
+    
+    const leadId = req.body.lead;
+    const personalLoanLead = await PersonalLoanLead.findById(leadId).populate('selectedUsers').populate('client');
+    if (!personalLoanLead) {
+      return res.status(404).json({ error: 'Lead not found' });
+    }
+
+    const previousDiscussions = personalLoanLead.discussions || [];
+    const newDiscussions = [...previousDiscussions, discussion._id];
+
+    await PersonalLoanLead.findByIdAndUpdate(leadId, { discussions: newDiscussions }, { new: true }).populate('selectedUsers').populate('client');
+
+    const io = getIO();
+    const notifications = [];
+    const clientName = personalLoanLead.client ? personalLoanLead.client.name : 'Unknown Client';
+
+    for (const user of personalLoanLead.selectedUsers) {
+      const notification = new Notification({
+        sender: req.user._id,
+        receiver: user._id,
+        entityType: 'PersonalLoanLead',
+        entityId: leadId,
+        message: `New discussion on lead of ${clientName} by ${req.user.name}.`
+      });
+
+      const savedNotification = await notification.save();
+      notifications.push(savedNotification);
+
+      io.to(user._id.toString()).emit('notifications', {
+        message: savedNotification.message,
+        leadId: savedNotification.entityId,
+        entityType: savedNotification.entityType,
+        notificationId: savedNotification._id
+      });
+    }
+
+    res.status(201).json(discussion);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete a personal loan lead
+router.put('/update-delstatus/:id', isAuth, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Find the lead by ID
+    const lead = await PersonalLoanLead.findById(id).populate('selectedUsers').populate('client');
+    if (!lead) {
+      return res.status(404).json({ error: 'Lead not found' });
+    }
+
+    // Check if the requesting user is included in selectedUsers
+    const isAuthorized = lead.selectedUsers.some(user => user._id.equals(req.user._id));
+    if (!isAuthorized) {
+      return res.status(403).json({ error: 'You are not authorized to update this lead' });
+    }
+
+    // Update the delstatus field to true
+    lead.delstatus = true;
+    const updatedLead = await lead.save();
+
+    // Prepare notification message
+    const clientName = lead.client ? lead.client.name : 'Unknown Client';
+    const notificationMessage = `Personal loan lead for ${clientName} has been deleted by ${req.user.name}.`;
+
+    // Create and save notifications
+    const io = getIO();
+    const notifications = await Promise.all(
+      lead.selectedUsers.map(async user => {
+        const notification = new Notification({
+          sender: req.user._id,
+          receiver: user._id,
+          entityType: 'PersonalLoanLead',
+          entityId: updatedLead._id,
+          message: notificationMessage,
+        });
+
+        // Save notification and return saved instance
+        return await notification.save();
+      })
+    );
+
+    // Emit notifications with ID
+    notifications.forEach(notification => {
+      io.to(notification.receiver.toString()).emit('notifications', {
+        message: notification.message,
+        leadId: notification.entityId,
+        entityType: notification.entityType,
+        notificationId: notification._id // Include the notification ID
+      });
+    });
+
+    res.status(200).json(updatedLead);
+  } catch (error) {
+    console.error('Error updating delstatus:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 module.exports = router;

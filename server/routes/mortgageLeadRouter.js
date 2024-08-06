@@ -1,7 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const router = express.Router();
-
 const BusinessLoanLead = require('../models/businessLoanLeadModel.js');
 const PersonalLoanLead = require('../models/personalLoanLeadModel.js');
 const MortgageLoanLead = require('../models/mortgageLoanLeadModel.js'); // Import MortgageLoanLead model

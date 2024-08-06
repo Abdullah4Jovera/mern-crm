@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema(
     otp: { type: String, default: null },
     otpExpiration: { type: Date, default: null },
     resetToken: { type: String, default: null }, 
-    resetTokenExpiration: { type: Date, default: null },
+    resetTokenExpiration: { type: Date, default: null }, 
     role: {
       type: String,
       enum: ['user', 'superadmin','CEO', 'MD', 
@@ -18,7 +18,9 @@ const userSchema = new mongoose.Schema(
         'personalloanHOD','businessfinanceloanHOD','realestateloanHOD','mortgageloanHOD',
         'personalloancordinator','businessfinanceloancordinator','realestateloancordinator','mortgageloancordinator',
         'personalloanteamleader','businessfinanceloanteamleader','realestateloanteamleader','mortgageloanteamleader',
-        'personalloansales','businessfinanceloansales','realestateloansales','mortgageloansales'
+        'personalloansales','businessfinanceloansales','realestateloansales','mortgageloansales',
+        'telesaleagent','telesaleteamleader',
+        'marketingagent','marketingmanager'
         
       ],
       default: 'user', 
